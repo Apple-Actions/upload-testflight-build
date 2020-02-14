@@ -1,16 +1,34 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+import * as os from 'os'
+import * as altool from './altool'
+
+import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    if (os.platform() !== 'darwin') {
+      throw new Error('Action requires macOS agent.')
+    }
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const issuerId: string = core.getInput('issuer-id')
+    const apiKeyId: string = core.getInput('api-key-id')
+    const apiPrivateKey: string = core.getInput('api-private-key')
+    const appPath: string = core.getInput('app-path')
+    const appType: string = core.getInput('app-type')
 
-    core.setOutput('time', new Date().toTimeString())
+    let output = ''
+    const options: ExecOptions = {}
+    options.listeners = {
+      stdout: (data: Buffer) => {
+        output += data.toString()
+      }
+    }
+
+    await altool.installPrivateKey(apiKeyId, apiPrivateKey)
+    await altool.uploadApp(appPath, appType, apiKeyId, issuerId, options)
+    await altool.deleteAllPrivateKeys()
+
+    core.setOutput('altool-response', output)
   } catch (error) {
     core.setFailed(error.message)
   }

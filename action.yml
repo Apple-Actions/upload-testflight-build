@@ -1,10 +1,29 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Upload app to TestFlight'
+description: 'Uploads an app to Apple TestFlight'
+author: 'Itty Bitty Apps Pty Ltd'
 inputs:
-  myInput:              # change this
-    description: 'input description here'
-    default: 'default value if applicable'
+  app-path:
+    description: 'The path to the app (ipa etc)'
+    required: true
+  app-type:
+    description: 'The type of app to upload (osx | ios | appletvos)'
+    required: true
+    default: 'ios'
+  issuer-id:
+    description: 'The AppStoreConnect API Key Issuer Identifier'
+    required: true
+  api-key-id:
+    description: 'The Key ID for AppStore Connect API'
+    required: true
+  api-private-key:
+    description: 'The PKCS8 format Private Key for AppStore Connect API'
+    required: true
+outputs:
+  altool-response:
+    description: 'XML output from altool'
 runs:
   using: 'node12'
   main: 'dist/index.js'
+branding:
+  icon: 'arrow-up-circle'
+  color: 'blue'
