@@ -18,6 +18,10 @@ inputs:
   api-private-key:
     description: 'The PKCS8 format Private Key for AppStore Connect API'
     required: true
+  wait-for-build-processing:
+    description: 'Whether or not to wait for the uploaded build to be processed'
+    required: true
+    default: 'true'
 outputs:
   altool-response:
     description: 'XML output from altool'

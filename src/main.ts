@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as os from 'os'
+import {v1} from 'appstoreconnect'
 import * as altool from './altool'
 
 import {ExecOptions} from '@actions/exec/lib/interfaces'
@@ -15,6 +16,7 @@ async function run(): Promise<void> {
     const apiPrivateKey: string = core.getInput('api-private-key')
     const appPath: string = core.getInput('app-path')
     const appType: string = core.getInput('app-type')
+    const waitForProcessing: string = core.getInput('wait-for-build-processing')
 
     let output = ''
     const options: ExecOptions = {}
@@ -27,6 +29,10 @@ async function run(): Promise<void> {
     await altool.installPrivateKey(apiKeyId, apiPrivateKey)
     await altool.uploadApp(appPath, appType, apiKeyId, issuerId, options)
     await altool.deleteAllPrivateKeys()
+
+    if (waitForProcessing === 'true') {
+      // TODO: poll app-store connect for build
+    }
 
     core.setOutput('altool-response', output)
   } catch (error) {
