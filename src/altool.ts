@@ -45,7 +45,6 @@ function privateKeysPath(): string {
   return path.join(home, 'private_keys')
 }
 
-
 export async function installPrivateKey(
   apiKeyId: string,
   apiPrivateKey: string

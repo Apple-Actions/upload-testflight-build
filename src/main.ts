@@ -32,6 +32,15 @@ async function run(): Promise<void> {
 
     if (waitForProcessing === 'true') {
       // TODO: poll app-store connect for build
+      const token = v1.token(apiPrivateKey, issuerId, apiKeyId)
+      const api = v1(token)
+
+      const builds = await v1.testflight.listBuilds(api, {
+        sort: ['-uploadedDate']
+      })
+      for (const build of builds.data) {
+        core.debug(JSON.stringify(build))
+      }
     }
 
     core.setOutput('altool-response', output)
