@@ -1,8 +1,8 @@
 {
-  "name": "typescript-action",
-  "version": "0.0.0",
+  "name": "upload-testflight-action",
+  "version": "1.0.0",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "A GitHub Action that uploads a app to Apple's TestFlight",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -15,18 +15,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/Apple-Actions/upload-testflight-build.git"
   },
   "keywords": [
     "actions",
     "node",
     "setup"
   ],
-  "author": "YourNameOrOrganization",
+  "author": "Itty Bitty Apps Pty Ltd",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.2.0",
-    "@actions/exec": "^1.0.3"
+    "@actions/exec": "^1.0.3",
+    "@types/jsonwebtoken": "^8.3.7",
+    "@types/luxon": "^1.21.0",
+    "appstoreconnect": "github:orj/appstoreconnect#release/v0.3.0",
+    "jsonwebtoken": "^8.5.1",
+    "luxon": "^1.22.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",
