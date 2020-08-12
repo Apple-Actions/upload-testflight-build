@@ -5,7 +5,7 @@
 ```yaml
 uses: apple-actions/upload-testflight-build@v1
 with: 
-  app-path: 'path/to/application.ipa`  
+  app-path: 'path/to/application.ipa'
   issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
   api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
   api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
