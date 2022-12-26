@@ -22,7 +22,7 @@ outputs:
   altool-response:
     description: 'XML output from altool'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
 branding:
   icon: 'arrow-up-circle'
