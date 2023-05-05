@@ -2,12 +2,12 @@ import * as path from 'path'
 import * as io from '@actions/io'
 import * as fs from 'fs'
 import * as exec from '@actions/exec'
-import {ExecOptions} from '@actions/exec/lib/interfaces'
+import { ExecOptions } from '@actions/exec/lib/interfaces'
 
 /**
  Upload the specified application.
  @param appPath The path to the app to upload.
- @param appType The type of app to upload (osx | ios | appletvos)
+ @param appType The type of app to upload (macos | ios | appletvos)
  @param apiKeyId The id of the API key to use (private key must already be installed)
  @param issuerId The issuer identifier of the API key.
  @param options (Optional) Command execution options.
