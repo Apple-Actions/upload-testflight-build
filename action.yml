@@ -18,6 +18,10 @@ inputs:
   api-private-key:
     description: 'The PKCS8 format Private Key for AppStore Connect API'
     required: true
+  retry-attempts-on-timeout:
+    description: 'Number of retry attempts to perform if upload to AppStore TestFlight failed due to timeout from server end'
+    required: false
+    default: '0'
 outputs:
   altool-response:
     description: 'XML output from altool'
