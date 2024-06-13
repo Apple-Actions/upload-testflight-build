@@ -1792,6 +1792,7 @@ function run() {
             const appPath = core.getInput('app-path');
             const appType = core.getInput('app-type');
             const retryAttempts = parseInt(core.getInput('retry-attempts-on-timeout'));
+            const retryWaitSeconds = parseInt(core.getInput('retry_wait_seconds'));
             let output = '';
             const options = {};
             options.listeners = {
@@ -1814,7 +1815,7 @@ function run() {
             try {
                 yield ts_retry_promise_1.retry(uploadWithRetry, {
                     retries: retryAttempts,
-                    delay: 2000,
+                    delay: retryWaitSeconds * 1000,
                     retryIf(error) {
                         return error.message === 'timeout';
                     }
