@@ -44,7 +44,7 @@ async function run(): Promise<void> {
     try {
       await retry(uploadWithRetry, {
         retries: retryAttempts,
-        delay: 2000,
+        delay: 120000,
         retryIf(error) {
           return error.message === 'timeout'
         }
