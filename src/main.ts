@@ -18,6 +18,9 @@ async function run(): Promise<void> {
     const retryAttempts: number = parseInt(
       core.getInput('retry-attempts-on-timeout')
     )
+    const retryWaitSeconds: number = parseInt(
+      core.getInput('retry_wait_seconds')
+    )
 
     let output = ''
     const options: ExecOptions = {}
@@ -44,7 +47,7 @@ async function run(): Promise<void> {
     try {
       await retry(uploadWithRetry, {
         retries: retryAttempts,
-        delay: 120000,
+        delay: retryWaitSeconds * 1000,
         retryIf(error) {
           return error.message === 'timeout'
         }
