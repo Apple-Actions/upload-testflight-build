@@ -29,8 +29,8 @@ async function run(): Promise<void> {
     await altool.deleteAllPrivateKeys()
 
     core.setOutput('altool-response', output)
-  } catch (error) {
-    core.setFailed(error.message)
+  } catch (error: unknown | Error) {
+    core.setFailed((error as Error).message || 'An unknown error occurred.')
   }
 }
 
