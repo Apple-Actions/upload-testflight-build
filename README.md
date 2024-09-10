@@ -12,6 +12,7 @@
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 ```
 
+please note: for  `api-private-key` parameter, just copy the content of Private Key's content and store it as value of APPSTORE_API_PRIVATE_KEY secret.
 ## Additional Arguments
 
 See [action.yml](action.yml) for more details.
