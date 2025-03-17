@@ -1,3 +1,7 @@
+# 🔨 NEED NEW MAINTAINER 🔨
+
+This repository needs a new maintainer who can actively manage it. If you would like to become that maintainer then please contact me (@orj@mastodon.social).
+
 # GitHub Action to upload to Apple's TestFlight service
 
 ## Usage:
