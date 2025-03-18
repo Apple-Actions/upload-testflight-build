@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as os from 'os'
 import * as altool from './altool'
 
-import {ExecOptions} from '@actions/exec/lib/interfaces'
+import { ExecOptions } from '@actions/exec/lib/interfaces'
 
 async function run(): Promise<void> {
   try {
