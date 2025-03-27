@@ -6,7 +6,7 @@ inputs:
     description: 'The path to the app (ipa etc)'
     required: true
   app-type:
-    description: 'The type of app to upload (osx | ios | appletvos)'
+    description: 'The type of app to upload (macos | ios | appletvos | visionos)'
     required: true
     default: 'ios'
   issuer-id:
