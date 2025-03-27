@@ -4,7 +4,7 @@
 
 ```yaml
 - name: 'Upload app to TestFlight'
-  uses: apple-actions/upload-testflight-build@v2
+  uses: apple-actions/upload-testflight-build@v3
   with: 
     app-path: 'path/to/application.ipa' 
     issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
