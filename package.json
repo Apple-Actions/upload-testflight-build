@@ -26,7 +26,8 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.9.1",
-    "@actions/exec": "^1.0.4"
+    "@actions/exec": "^1.0.4",
+    "ts-retry-promise": "^0.8.1"
   },
   "devDependencies": {
     "@types/jest": "^26.0.7",

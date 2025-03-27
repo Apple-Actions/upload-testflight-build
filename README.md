@@ -14,6 +14,7 @@ This repository needs a new maintainer who can actively manage it. If you would 
     issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
     api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+    retry-attempts-on-timeout: 2
 ```
 
 ## Additional Arguments
