@@ -27,17 +27,17 @@
   "author": "Itty Bitty Apps Pty Ltd",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.10.1",
-    "@actions/exec": "^1.1.1",
-    "@actions/io": "^1.1.0"
+    "@actions/core": "~1.11.0",
+    "@actions/exec": "~1.1.0",
+    "@actions/io": "~1.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.9",
-    "@vercel/ncc": "^0.38.1",
-    "eslint": "^9.23.0",
-    "eslint-plugin-github": "^6.0.0",
-    "prettier": "^3.3.2",
-    "typescript": "^5.5.3"
+    "@types/node": "~20.17.0",
+    "@vercel/ncc": "~0.38.0",
+    "eslint": "~9.23.0",
+    "eslint-plugin-github": "~6.0.0",
+    "prettier": "~3.5.0",
+    "typescript": "~5.8.0"
   },
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
