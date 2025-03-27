@@ -1,6 +1,6 @@
 {
   "name": "upload-testflight-action",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "description": "A GitHub Action that uploads a app to Apple's TestFlight",
   "main": "lib/main.js",
@@ -9,12 +9,12 @@
   },
   "scripts": {
     "build": "tsc",
-    "format": "prettier --write **/*.ts",
-    "format-check": "prettier --check **/*.ts",
-    "lint": "eslint src/**/*.ts",
-    "pack": "ncc build",
+    "format": "prettier --write",
+    "format-check": "prettier --check",
+    "lint": "eslint",
+    "package": "ncc build",
     "test": "jest",
-    "all": "npm run build && npm run format && npm run lint && npm run pack && npm test"
+    "all": "yarn format && yarn lint && yarn build && yarn package && yarn test"
   },
   "repository": {
     "type": "git",
@@ -45,5 +45,6 @@
     "prettier": "^3.3.2",
     "ts-jest": "^29.1.5",
     "typescript": "^5.5.3"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
