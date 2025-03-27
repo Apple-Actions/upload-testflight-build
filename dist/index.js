@@ -6,39 +6,6 @@
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -52,10 +19,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uploadApp = uploadApp;
 exports.installPrivateKey = installPrivateKey;
 exports.deleteAllPrivateKeys = deleteAllPrivateKeys;
-const path = __importStar(__nccwpck_require__(928));
-const io = __importStar(__nccwpck_require__(994));
-const fs = __importStar(__nccwpck_require__(896));
-const exec = __importStar(__nccwpck_require__(236));
+const path_1 = __nccwpck_require__(928);
+const io_1 = __nccwpck_require__(994);
+const fs_1 = __nccwpck_require__(896);
+const exec_1 = __nccwpck_require__(236);
 /**
  Upload the specified application.
  @param appPath The path to the app to upload.
@@ -80,7 +47,7 @@ function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
             '--apiIssuer',
             issuerId
         ];
-        yield exec.exec('xcrun', args, options);
+        yield (0, exec_1.exec)('xcrun', args, options);
     });
 }
 function privateKeysPath() {
@@ -88,17 +55,17 @@ function privateKeysPath() {
     if (home === '') {
         throw new Error('Unable to determine user HOME path');
     }
-    return path.join(home, 'private_keys');
+    return (0, path_1.join)(home, 'private_keys');
 }
 function installPrivateKey(apiKeyId, apiPrivateKey) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield io.mkdirP(privateKeysPath());
-        fs.writeFileSync(path.join(privateKeysPath(), `AuthKey_${apiKeyId}.p8`), apiPrivateKey);
+        yield (0, io_1.mkdirP)(privateKeysPath());
+        (0, fs_1.writeFileSync)((0, path_1.join)(privateKeysPath(), `AuthKey_${apiKeyId}.p8`), apiPrivateKey);
     });
 }
 function deleteAllPrivateKeys() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield io.rmRF(privateKeysPath());
+        yield (0, io_1.rmRF)(privateKeysPath());
     });
 }
 
@@ -110,39 +77,6 @@ function deleteAllPrivateKeys() {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -153,20 +87,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(484));
-const os = __importStar(__nccwpck_require__(857));
-const altool = __importStar(__nccwpck_require__(985));
+const core_1 = __nccwpck_require__(484);
+const os_1 = __nccwpck_require__(857);
+const altool_1 = __nccwpck_require__(985);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            if (os.platform() !== 'darwin') {
+            if ((0, os_1.platform)() !== 'darwin') {
                 throw new Error('Action requires macOS agent.');
             }
-            const issuerId = core.getInput('issuer-id');
-            const apiKeyId = core.getInput('api-key-id');
-            const apiPrivateKey = core.getInput('api-private-key');
-            const appPath = core.getInput('app-path');
-            const appType = core.getInput('app-type');
+            const issuerId = (0, core_1.getInput)('issuer-id');
+            const apiKeyId = (0, core_1.getInput)('api-key-id');
+            const apiPrivateKey = (0, core_1.getInput)('api-private-key');
+            const appPath = (0, core_1.getInput)('app-path');
+            const appType = (0, core_1.getInput)('app-type');
             let output = '';
             const options = {};
             options.listeners = {
@@ -174,13 +108,13 @@ function run() {
                     output += data.toString();
                 }
             };
-            yield altool.installPrivateKey(apiKeyId, apiPrivateKey);
-            yield altool.uploadApp(appPath, appType, apiKeyId, issuerId, options);
-            yield altool.deleteAllPrivateKeys();
-            core.setOutput('altool-response', output);
+            yield (0, altool_1.installPrivateKey)(apiKeyId, apiPrivateKey);
+            yield (0, altool_1.uploadApp)(appPath, appType, apiKeyId, issuerId, options);
+            yield (0, altool_1.deleteAllPrivateKeys)();
+            (0, core_1.setOutput)('altool-response', output);
         }
         catch (error) {
-            core.setFailed(error.message || 'An unknown error occurred.');
+            (0, core_1.setFailed)(error.message || 'An unknown error occurred.');
         }
     });
 }

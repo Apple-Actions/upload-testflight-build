@@ -1,20 +1,20 @@
-import * as core from '@actions/core'
-import * as os from 'os'
-import * as altool from './altool'
+import {getInput, setOutput, setFailed} from '@actions/core'
+import {platform} from 'os'
+import {installPrivateKey, uploadApp, deleteAllPrivateKeys} from './altool'
 
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 async function run(): Promise<void> {
   try {
-    if (os.platform() !== 'darwin') {
+    if (platform() !== 'darwin') {
       throw new Error('Action requires macOS agent.')
     }
 
-    const issuerId: string = core.getInput('issuer-id')
-    const apiKeyId: string = core.getInput('api-key-id')
-    const apiPrivateKey: string = core.getInput('api-private-key')
-    const appPath: string = core.getInput('app-path')
-    const appType: string = core.getInput('app-type')
+    const issuerId: string = getInput('issuer-id')
+    const apiKeyId: string = getInput('api-key-id')
+    const apiPrivateKey: string = getInput('api-private-key')
+    const appPath: string = getInput('app-path')
+    const appType: string = getInput('app-type')
 
     let output = ''
     const options: ExecOptions = {}
@@ -24,13 +24,13 @@ async function run(): Promise<void> {
       }
     }
 
-    await altool.installPrivateKey(apiKeyId, apiPrivateKey)
-    await altool.uploadApp(appPath, appType, apiKeyId, issuerId, options)
-    await altool.deleteAllPrivateKeys()
+    await installPrivateKey(apiKeyId, apiPrivateKey)
+    await uploadApp(appPath, appType, apiKeyId, issuerId, options)
+    await deleteAllPrivateKeys()
 
-    core.setOutput('altool-response', output)
+    setOutput('altool-response', output)
   } catch (error: unknown | Error) {
-    core.setFailed((error as Error).message || 'An unknown error occurred.')
+    setFailed((error as Error).message || 'An unknown error occurred.')
   }
 }
 

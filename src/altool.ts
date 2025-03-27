@@ -1,7 +1,7 @@
-import * as path from 'path'
-import * as io from '@actions/io'
-import * as fs from 'fs'
-import * as exec from '@actions/exec'
+import {join} from 'path'
+import {mkdirP, rmRF} from '@actions/io'
+import {writeFileSync} from 'fs'
+import {exec} from '@actions/exec'
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 /**
@@ -34,7 +34,7 @@ export async function uploadApp(
     issuerId
   ]
 
-  await exec.exec('xcrun', args, options)
+  await exec('xcrun', args, options)
 }
 
 function privateKeysPath(): string {
@@ -42,20 +42,20 @@ function privateKeysPath(): string {
   if (home === '') {
     throw new Error('Unable to determine user HOME path')
   }
-  return path.join(home, 'private_keys')
+  return join(home, 'private_keys')
 }
 
 export async function installPrivateKey(
   apiKeyId: string,
   apiPrivateKey: string
 ): Promise<void> {
-  await io.mkdirP(privateKeysPath())
-  fs.writeFileSync(
-    path.join(privateKeysPath(), `AuthKey_${apiKeyId}.p8`),
+  await mkdirP(privateKeysPath())
+  writeFileSync(
+    join(privateKeysPath(), `AuthKey_${apiKeyId}.p8`),
     apiPrivateKey
   )
 }
 
 export async function deleteAllPrivateKeys(): Promise<void> {
-  await io.rmRF(privateKeysPath())
+  await rmRF(privateKeysPath())
 }
