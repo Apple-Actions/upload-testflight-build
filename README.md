@@ -7,7 +7,7 @@
 
 * Create an `App Store Connect API Key` ([these instructions](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api) with the role `App Manager`)
 * Download the certificate (must be done upon creation and will be called `ios_distribution.cer`)
-* Copy the `.p8` in base64 format ( `base64 -i AuthKey_<key_id>.p8 | pbcopy` )
+* Copy the `.p8` ( `cat AuthKey_<key_id>.p8 | pbcopy` )
 * Add it as a secret called `APPSTORE_API_PRIVATE_KEY` and add `Key ID` as a variable called `APPSTORE_API_KEY_ID`
 * Add `Issuer ID` as a variable called `APPSTORE_ISSUER_ID` ([found here](https://appstoreconnect.apple.com/access/integrations/api))
 
