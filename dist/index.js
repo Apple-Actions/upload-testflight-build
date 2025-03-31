@@ -2,19 +2,10 @@
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 9985:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uploadApp = uploadApp;
 exports.installPrivateKey = installPrivateKey;
@@ -31,24 +22,22 @@ const exec_1 = __nccwpck_require__(5236);
  @param issuerId The issuer identifier of the API key.
  @param options (Optional) Command execution options.
  */
-function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const args = [
-            'altool',
-            '--output-format',
-            'xml',
-            '--upload-app',
-            '--file',
-            appPath,
-            '--type',
-            appType,
-            '--apiKey',
-            apiKeyId,
-            '--apiIssuer',
-            issuerId
-        ];
-        yield (0, exec_1.exec)('xcrun', args, options);
-    });
+async function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
+    const args = [
+        'altool',
+        '--output-format',
+        'xml',
+        '--upload-app',
+        '--file',
+        appPath,
+        '--type',
+        appType,
+        '--apiKey',
+        apiKeyId,
+        '--apiIssuer',
+        issuerId
+    ];
+    await (0, exec_1.exec)('xcrun', args, options);
 }
 function privateKeysPath() {
     const home = process.env['HOME'] || '';
@@ -57,68 +46,13 @@ function privateKeysPath() {
     }
     return (0, path_1.join)(home, 'private_keys');
 }
-function installPrivateKey(apiKeyId, apiPrivateKey) {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield (0, io_1.mkdirP)(privateKeysPath());
-        (0, fs_1.writeFileSync)((0, path_1.join)(privateKeysPath(), `AuthKey_${apiKeyId}.p8`), apiPrivateKey);
-    });
+async function installPrivateKey(apiKeyId, apiPrivateKey) {
+    await (0, io_1.mkdirP)(privateKeysPath());
+    (0, fs_1.writeFileSync)((0, path_1.join)(privateKeysPath(), `AuthKey_${apiKeyId}.p8`), apiPrivateKey);
 }
-function deleteAllPrivateKeys() {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield (0, io_1.rmRF)(privateKeysPath());
-    });
+async function deleteAllPrivateKeys() {
+    await (0, io_1.rmRF)(privateKeysPath());
 }
-
-
-/***/ }),
-
-/***/ 5915:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core_1 = __nccwpck_require__(7484);
-const os_1 = __nccwpck_require__(857);
-const altool_1 = __nccwpck_require__(9985);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            if ((0, os_1.platform)() !== 'darwin') {
-                throw new Error('Action requires macOS agent.');
-            }
-            const issuerId = (0, core_1.getInput)('issuer-id');
-            const apiKeyId = (0, core_1.getInput)('api-key-id');
-            const apiPrivateKey = (0, core_1.getInput)('api-private-key');
-            const appPath = (0, core_1.getInput)('app-path');
-            const appType = (0, core_1.getInput)('app-type');
-            let output = '';
-            const options = {};
-            options.listeners = {
-                stdout: (data) => {
-                    output += data.toString();
-                }
-            };
-            yield (0, altool_1.installPrivateKey)(apiKeyId, apiPrivateKey);
-            yield (0, altool_1.uploadApp)(appPath, appType, apiKeyId, issuerId, options);
-            yield (0, altool_1.deleteAllPrivateKeys)();
-            (0, core_1.setOutput)('altool-response', output);
-        }
-        catch (error) {
-            (0, core_1.setFailed)(error.message || 'An unknown error occurred.');
-        }
-    });
-}
-run();
 
 
 /***/ }),
@@ -27676,12 +27610,46 @@ module.exports = parseParams
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(5915);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core_1 = __nccwpck_require__(7484);
+const os_1 = __nccwpck_require__(857);
+const altool_1 = __nccwpck_require__(9985);
+async function run() {
+    try {
+        if ((0, os_1.platform)() !== 'darwin') {
+            throw new Error('Action requires macOS agent.');
+        }
+        const issuerId = (0, core_1.getInput)('issuer-id');
+        const apiKeyId = (0, core_1.getInput)('api-key-id');
+        const apiPrivateKey = (0, core_1.getInput)('api-private-key');
+        const appPath = (0, core_1.getInput)('app-path');
+        const appType = (0, core_1.getInput)('app-type');
+        let output = '';
+        const options = {};
+        options.listeners = {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        };
+        await (0, altool_1.installPrivateKey)(apiKeyId, apiPrivateKey);
+        await (0, altool_1.uploadApp)(appPath, appType, apiKeyId, issuerId, options);
+        await (0, altool_1.deleteAllPrivateKeys)();
+        (0, core_1.setOutput)('altool-response', output);
+    }
+    catch (error) {
+        (0, core_1.setFailed)(error.message || 'An unknown error occurred.');
+    }
+}
+run();
+
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;
