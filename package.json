@@ -33,7 +33,7 @@
     "@actions/io": "~1.1.0"
   },
   "devDependencies": {
-    "@types/node": "~20.17.0",
+    "@types/node": "~22.15.17",
     "@vercel/ncc": "~0.38.0",
     "eslint": "~9.26.0",
     "eslint-plugin-github": "~6.0.0",
