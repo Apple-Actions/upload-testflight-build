@@ -453,12 +453,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:~20.17.0":
-  version: 20.17.46
-  resolution: "@types/node@npm:20.17.46"
+"@types/node@npm:~20.17.57":
+  version: 20.17.57
+  resolution: "@types/node@npm:20.17.57"
   dependencies:
     undici-types: "npm:~6.19.2"
-  checksum: 10c0/2b8cf1ea80af3c62247636fe44ec815e64978085c6f714792ad93d9cc826395b0bf7a969870f90274bf3a129b9d23994aa3a9c5e4cf00477d43f929330953662
+  checksum: 10c0/c04f3b6c4f335ad50bd3af62cd9e64a86c355cb6b363cb0e618511db4c6801c8539781c3786076eca6f56e999d6c7fc4748e43393a107aad57e65e3ffd1f73bf
   languageName: node
   linkType: hard
 
@@ -2362,9 +2362,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"knip@npm:~5.58.0":
-  version: 5.58.0
-  resolution: "knip@npm:5.58.0"
+"knip@npm:~5.59.1":
+  version: 5.59.1
+  resolution: "knip@npm:5.59.1"
   dependencies:
     "@nodelib/fs.walk": "npm:^1.2.3"
     fast-glob: "npm:^3.3.3"
@@ -2385,7 +2385,7 @@ __metadata:
   bin:
     knip: bin/knip.js
     knip-bun: bin/knip-bun.js
-  checksum: 10c0/46586ff6cca323da5f07ea6fa8bdba41562b6c06716e0c1e27ffd08a69221bcb7356e21c40e1d6bcfeb8bd646a2be91d8113fabd22938f36d4ee5bd22bf86a58
+  checksum: 10c0/5ab2bea2f79c4ff3390c2105e6d9dcc7a5cdeb62a3dba8fe5d1b7a4d8038e3aeeac9f35bbbaf3c431c52b4d042653c52d1f200b4c98a3d3a61bcc698279c8a3b
   languageName: node
   linkType: hard
 
@@ -3648,11 +3648,11 @@ __metadata:
     "@actions/core": "npm:~1.11.0"
     "@actions/exec": "npm:~1.1.0"
     "@actions/io": "npm:~1.1.0"
-    "@types/node": "npm:~20.17.0"
+    "@types/node": "npm:~20.17.57"
     "@vercel/ncc": "npm:~0.38.0"
     eslint: "npm:~9.28.0"
     eslint-plugin-github: "npm:~6.0.0"
-    knip: "npm:~5.58.0"
+    knip: "npm:~5.59.1"
     prettier: "npm:~3.5.0"
     typescript: "npm:~5.8.3"
   languageName: unknown
