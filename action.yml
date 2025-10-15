@@ -18,9 +18,12 @@ inputs:
   api-private-key:
     description: 'The PKCS8 format Private Key for AppStore Connect API'
     required: true
+  release-note:
+    description: 'Optional TestFlight release note content to attach to the uploaded build'
+    required: false
 outputs:
-  altool-response:
-    description: 'XML output from altool'
+  transporter-response:
+    description: 'output from transporter'
 runs:
   using: 'node20'
   main: 'dist/index.js'

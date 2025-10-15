@@ -21,6 +21,7 @@
     issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
     api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+    release-note: ${{ steps.generate_notes.outputs.whats_new }} # optional
 ```
 
 ## Additional Arguments

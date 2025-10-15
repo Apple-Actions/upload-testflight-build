@@ -1,6 +1,7 @@
 import {getInput, setOutput, setFailed} from '@actions/core'
 import {platform} from 'os'
 import {installPrivateKey, uploadApp, deleteAllPrivateKeys} from './transporter'
+import {submitReleaseNotesIfProvided} from './releaseNotes'
 
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
@@ -15,6 +16,7 @@ async function run(): Promise<void> {
     const apiPrivateKey: string = getInput('api-private-key')
     const appPath: string = getInput('app-path')
     const appType: string = getInput('app-type')
+    const releaseNote: string = getInput('release-note')
 
     let output = ''
     const options: ExecOptions = {}
@@ -26,6 +28,14 @@ async function run(): Promise<void> {
 
     await installPrivateKey(apiKeyId, apiPrivateKey)
     await uploadApp(appPath, appType, apiKeyId, issuerId, options)
+    await submitReleaseNotesIfProvided({
+      releaseNote,
+      appPath,
+      appType,
+      issuerId,
+      apiKeyId,
+      apiPrivateKey
+    })
     await deleteAllPrivateKeys()
 
     setOutput('transporter-response', output)
