@@ -1,6 +1,6 @@
 import {getInput, setOutput, setFailed} from '@actions/core'
 import {platform} from 'os'
-import {installPrivateKey, uploadApp, deleteAllPrivateKeys} from './altool'
+import {installPrivateKey, uploadApp, deleteAllPrivateKeys} from './transporter'
 
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
@@ -28,7 +28,7 @@ async function run(): Promise<void> {
     await uploadApp(appPath, appType, apiKeyId, issuerId, options)
     await deleteAllPrivateKeys()
 
-    setOutput('altool-response', output)
+    setOutput('transporter-response', output)
   } catch (error: unknown | Error) {
     setFailed((error as Error).message || 'An unknown error occurred.')
   }
