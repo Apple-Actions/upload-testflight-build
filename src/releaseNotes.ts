@@ -23,14 +23,14 @@ const MAX_ATTEMPTS = 20
 const RETRY_DELAY_MS = 30000
 
 export async function submitReleaseNotesIfProvided(params: {
-  releaseNote: string
+  releaseNotes: string
   appPath: string
   appType: string
   issuerId: string
   apiKeyId: string
   apiPrivateKey: string
 }): Promise<void> {
-  const trimmed = params.releaseNote.trim()
+  const trimmed = params.releaseNotes.trim()
   if (trimmed === '') {
     info('No release note provided. Skipping TestFlight metadata update.')
     return
@@ -52,7 +52,7 @@ export async function submitReleaseNotesIfProvided(params: {
     token
   )
   const localizationId = await lookupLocalizationId(buildId, token)
-  await updateReleaseNote(localizationId, trimmed, token)
+  await updatereleaseNotes(localizationId, trimmed, token)
 }
 
 function generateToken(
@@ -227,9 +227,9 @@ async function lookupLocalizationId(
   )
 }
 
-async function updateReleaseNote(
+async function updatereleaseNotes(
   localizationId: string,
-  releaseNote: string,
+  releaseNotes: string,
   token: string
 ): Promise<void> {
   const payload = {
@@ -237,7 +237,7 @@ async function updateReleaseNote(
       id: localizationId,
       type: 'betaBuildLocalizations',
       attributes: {
-        whatsNew: releaseNote.slice(0, 4000)
+        whatsNew: releaseNotes.slice(0, 4000)
       }
     }
   }

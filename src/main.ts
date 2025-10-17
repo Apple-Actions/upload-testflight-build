@@ -16,7 +16,7 @@ async function run(): Promise<void> {
     const apiPrivateKey: string = getInput('api-private-key')
     const appPath: string = getInput('app-path')
     const appType: string = getInput('app-type')
-    const releaseNote: string = getInput('release-note')
+    const releaseNotes: string = getInput('release-notes')
 
     let output = ''
     const options: ExecOptions = {}
@@ -29,7 +29,7 @@ async function run(): Promise<void> {
     await installPrivateKey(apiKeyId, apiPrivateKey)
     await uploadApp(appPath, appType, apiKeyId, issuerId, options)
     await submitReleaseNotesIfProvided({
-      releaseNote,
+      releaseNotes,
       appPath,
       appType,
       issuerId,

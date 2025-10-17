@@ -18,7 +18,7 @@ inputs:
   api-private-key:
     description: 'The PKCS8 format Private Key for AppStore Connect API'
     required: true
-  release-note:
+  release-notes:
     description: 'Optional TestFlight release note content to attach to the uploaded build'
     required: false
 outputs:
