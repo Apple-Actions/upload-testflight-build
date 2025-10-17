@@ -13,6 +13,7 @@
     "format-check": "prettier --check src/",
     "knip": "knip",
     "lint": "eslint",
+    "test": "vitest run",
     "package": "ncc build --license licenses.txt",
     "all": "yarn format && yarn knip && yarn lint && yarn build && yarn package"
   },
@@ -39,7 +40,8 @@
     "eslint-plugin-github": "~6.0.0",
     "knip": "~5.64.1",
     "prettier": "~3.6.0",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "~2.1.4"
   },
   "packageManager": "yarn@4.9.4"
 }
