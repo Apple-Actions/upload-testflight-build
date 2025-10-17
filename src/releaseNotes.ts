@@ -258,7 +258,7 @@ async function fetchJson(
   errorMessage: string,
   method: 'GET' | 'PATCH' = 'GET',
   body?: unknown
-): Promise<any> {
+): Promise<unknown> {
   const url = new URL(path, BASE_URL)
   const response = await fetch(url, {
     method,
