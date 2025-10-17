@@ -52,7 +52,7 @@ export async function submitReleaseNotesIfProvided(params: {
     token
   )
   const localizationId = await lookupLocalizationId(buildId, token)
-  await updatereleaseNotes(localizationId, trimmed, token)
+  await updateReleaseNotes(localizationId, trimmed, token)
 }
 
 function generateToken(
@@ -233,7 +233,7 @@ async function lookupLocalizationId(
   )
 }
 
-async function updatereleaseNotes(
+async function updateReleaseNotes(
   localizationId: string,
   releaseNotes: string,
   token: string
