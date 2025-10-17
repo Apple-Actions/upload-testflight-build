@@ -148,7 +148,9 @@ async function lookupAppId(bundleId: string, token: string): Promise<string> {
   const params = new URLSearchParams()
   params.set('filter[bundleId]', bundleId)
 
-  const response = await fetchJson(
+  const response = await fetchJson<{
+    data?: Array<{id?: string}>
+  }>(
     `/apps?${params.toString()}`,
     token,
     'Failed to locate App Store Connect application.'
@@ -176,7 +178,9 @@ async function lookupBuildId(
   params.set('filter[preReleaseVersion.platform]', platform)
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const response = await fetchJson(
+    const response = await fetchJson<{
+      data?: Array<{id?: string}>
+    }>(
       `/builds?${params.toString()}`,
       token,
       'Failed to query builds for release note update.'
@@ -205,7 +209,9 @@ async function lookupLocalizationId(
   token: string
 ): Promise<string> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const response = await fetchJson(
+    const response = await fetchJson<{
+      data?: Array<{id?: string}>
+    }>(
       `/builds/${buildId}/betaBuildLocalizations`,
       token,
       'Failed to query beta build localizations.'
@@ -252,13 +258,13 @@ async function updatereleaseNotes(
   info('Successfully updated TestFlight release note.')
 }
 
-async function fetchJson(
+async function fetchJson<T = unknown>(
   path: string,
   token: string,
   errorMessage: string,
   method: 'GET' | 'PATCH' = 'GET',
   body?: unknown
-): Promise<unknown> {
+): Promise<T> {
   const url = new URL(path, BASE_URL)
   const response = await fetch(url, {
     method,
@@ -275,15 +281,15 @@ async function fetchJson(
   }
 
   if (response.status === 204) {
-    return {}
+    return {} as T
   }
 
   const contentType = response.headers.get('content-type')
   if (!contentType || !contentType.includes('application/json')) {
-    return {}
+    return {} as T
   }
 
-  return response.json()
+  return (await response.json()) as T
 }
 
 async function delay(durationMs: number): Promise<void> {
