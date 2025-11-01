@@ -5,7 +5,7 @@ import {exec} from '@actions/exec'
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
 /**
- Upload the specified application.
+ Upload the specified application via iTMSTransporter.
  @param appPath The path to the app to upload.
  @param appType The type of app to upload (macos | ios | appletvos | visionos)
  @param apiKeyId The id of the API key to use (private key must already be installed)
@@ -20,19 +20,22 @@ export async function uploadApp(
   options?: ExecOptions
 ): Promise<void> {
   const args: string[] = [
-    'altool',
-    '--output-format',
-    'xml',
-    '--upload-app',
-    '--file',
+    'iTMSTransporter',
+    '-m',
+    'upload',
+    '-assetFile',
     appPath,
-    '--type',
-    appType,
-    '--apiKey',
+    '-apiKey',
     apiKeyId,
-    '--apiIssuer',
-    issuerId
+    '-apiIssuer',
+    issuerId,
+    '-v',
+    'eXtreme'
   ]
+
+  if (appType !== '') {
+    args.push('-appPlatform', appType)
+  }
 
   await exec('xcrun', args, options)
 }
