@@ -20,9 +20,10 @@ const exec_1 = __nccwpck_require__(5236);
  @param appType The type of app to upload (macos | ios | appletvos | visionos)
  @param apiKeyId The id of the API key to use (private key must already be installed)
  @param issuerId The issuer identifier of the API key.
+ @param appleId (Optional) The Apple ID of the app to upload (required for Xcode 26+).
  @param options (Optional) Command execution options.
  */
-async function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
+async function uploadApp(appPath, appType, apiKeyId, issuerId, appleId, options) {
     const args = [
         'altool',
         '--output-format',
@@ -37,6 +38,9 @@ async function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
         '--apiIssuer',
         issuerId
     ];
+    if (appleId) {
+        args.push('--apple-id', appleId);
+    }
     await (0, exec_1.exec)('xcrun', args, options);
 }
 function privateKeysPath() {
@@ -27630,6 +27634,7 @@ async function run() {
         const apiPrivateKey = (0, core_1.getInput)('api-private-key');
         const appPath = (0, core_1.getInput)('app-path');
         const appType = (0, core_1.getInput)('app-type');
+        const appleId = (0, core_1.getInput)('apple-id');
         let output = '';
         const options = {};
         options.listeners = {
@@ -27638,7 +27643,7 @@ async function run() {
             }
         };
         await (0, altool_1.installPrivateKey)(apiKeyId, apiPrivateKey);
-        await (0, altool_1.uploadApp)(appPath, appType, apiKeyId, issuerId, options);
+        await (0, altool_1.uploadApp)(appPath, appType, apiKeyId, issuerId, appleId, options);
         await (0, altool_1.deleteAllPrivateKeys)();
         (0, core_1.setOutput)('altool-response', output);
     }

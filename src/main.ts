@@ -15,6 +15,7 @@ async function run(): Promise<void> {
     const apiPrivateKey: string = getInput('api-private-key')
     const appPath: string = getInput('app-path')
     const appType: string = getInput('app-type')
+    const appleId: string = getInput('apple-id')
 
     let output = ''
     const options: ExecOptions = {}
@@ -25,7 +26,7 @@ async function run(): Promise<void> {
     }
 
     await installPrivateKey(apiKeyId, apiPrivateKey)
-    await uploadApp(appPath, appType, apiKeyId, issuerId, options)
+    await uploadApp(appPath, appType, apiKeyId, issuerId, appleId, options)
     await deleteAllPrivateKeys()
 
     setOutput('altool-response', output)

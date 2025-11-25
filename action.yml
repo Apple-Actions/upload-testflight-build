@@ -18,6 +18,9 @@ inputs:
   api-private-key:
     description: 'The PKCS8 format Private Key for AppStore Connect API'
     required: true
+  apple-id:
+    description: 'The Apple ID of the app to upload (required for Xcode 26+)'
+    required: false
 outputs:
   altool-response:
     description: 'XML output from altool'

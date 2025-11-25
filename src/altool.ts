@@ -10,6 +10,7 @@ import {ExecOptions} from '@actions/exec/lib/interfaces'
  @param appType The type of app to upload (macos | ios | appletvos | visionos)
  @param apiKeyId The id of the API key to use (private key must already be installed)
  @param issuerId The issuer identifier of the API key.
+ @param appleId (Optional) The Apple ID of the app to upload (required for Xcode 26+).
  @param options (Optional) Command execution options.
  */
 export async function uploadApp(
@@ -17,6 +18,7 @@ export async function uploadApp(
   appType: string,
   apiKeyId: string,
   issuerId: string,
+  appleId?: string,
   options?: ExecOptions
 ): Promise<void> {
   const args: string[] = [
@@ -33,6 +35,10 @@ export async function uploadApp(
     '--apiIssuer',
     issuerId
   ]
+
+  if (appleId) {
+    args.push('--apple-id', appleId)
+  }
 
   await exec('xcrun', args, options)
 }
