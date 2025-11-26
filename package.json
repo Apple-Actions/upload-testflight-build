@@ -34,14 +34,14 @@
     "@actions/io": "~2.0.0"
   },
   "devDependencies": {
-    "@types/node": "~24.9.2",
+    "@types/node": "~24.10.0",
     "@vercel/ncc": "~0.38.0",
     "eslint": "~9.39.0",
     "eslint-plugin-github": "~6.0.0",
-    "knip": "~5.66.4",
+    "knip": "~5.70.0",
     "prettier": "~3.6.0",
-    "typescript": "~5.9.3",
-    "vitest": "~2.1.4"
+    "typescript": "~5.9.0",
+    "vitest": "~2.1.0"
   },
   "packageManager": "yarn@4.12.0"
 }
