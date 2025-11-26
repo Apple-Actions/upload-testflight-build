@@ -1,7 +1,189 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 9985:
+/***/ 1396:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.submitReleaseNotesIfProvided = submitReleaseNotesIfProvided;
+const crypto_1 = __nccwpck_require__(6982);
+const promises_1 = __nccwpck_require__(1943);
+const os_1 = __nccwpck_require__(857);
+const path_1 = __nccwpck_require__(6928);
+const exec_1 = __nccwpck_require__(5236);
+const io_1 = __nccwpck_require__(4994);
+const core_1 = __nccwpck_require__(7484);
+const PLATFORM_MAP = {
+    ios: 'IOS',
+    macos: 'MAC_OS',
+    appletvos: 'TV_OS',
+    visionos: 'VISION_OS'
+};
+const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
+const MAX_ATTEMPTS = 20;
+const RETRY_DELAY_MS = 30000;
+async function submitReleaseNotesIfProvided(params) {
+    const trimmed = params.releaseNotes.trim();
+    if (trimmed === '') {
+        (0, core_1.info)('No release note provided. Skipping TestFlight metadata update.');
+        return;
+    }
+    const metadata = await extractAppMetadata(params.appPath);
+    const token = generateToken(params.issuerId, params.apiKeyId, params.apiPrivateKey);
+    const platform = PLATFORM_MAP[params.appType.toLowerCase()] ?? 'IOS';
+    const appId = await lookupAppId(metadata.bundleId, token);
+    const buildId = await lookupBuildId(appId, metadata.buildNumber, platform, token);
+    const localizationId = await lookupLocalizationId(buildId, token);
+    await updateReleaseNotes(localizationId, trimmed, token);
+}
+function generateToken(issuerId, apiKeyId, apiPrivateKey) {
+    const header = {
+        alg: 'ES256',
+        kid: apiKeyId,
+        typ: 'JWT'
+    };
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+        iss: issuerId,
+        aud: 'appstoreconnect-v1',
+        iat: now - 60,
+        exp: now + 600
+    };
+    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
+    const signer = (0, crypto_1.createSign)('SHA256');
+    signer.update(signingInput);
+    signer.end();
+    const signature = signer.sign({
+        key: apiPrivateKey,
+        dsaEncoding: 'ieee-p1363'
+    });
+    const encodedSignature = Buffer.from(signature).toString('base64url');
+    return `${signingInput}.${encodedSignature}`;
+}
+async function extractAppMetadata(appPath) {
+    const workingDir = await (0, promises_1.mkdtemp)((0, path_1.join)((0, os_1.tmpdir)(), 'upload-testflight-'));
+    try {
+        await (0, exec_1.exec)('ditto', ['-xk', appPath, workingDir], { silent: true });
+        const payloadDirectory = (0, path_1.join)(workingDir, 'Payload');
+        const entries = await (0, promises_1.readdir)(payloadDirectory);
+        const appDirectory = entries.find(entry => entry.endsWith('.app'));
+        if (!appDirectory) {
+            throw new Error('Unable to locate *.app bundle inside TestFlight payload.');
+        }
+        const infoPath = (0, path_1.join)(payloadDirectory, appDirectory, 'Info.plist');
+        const infoJson = await readPlistAsJson(infoPath);
+        const parsed = JSON.parse(infoJson);
+        const bundleId = parsed['CFBundleIdentifier'];
+        const buildNumber = parsed['CFBundleVersion'];
+        if (!bundleId || !buildNumber) {
+            throw new Error('Info.plist missing CFBundleIdentifier or CFBundleVersion.');
+        }
+        return { bundleId, buildNumber };
+    }
+    finally {
+        await (0, io_1.rmRF)(workingDir);
+    }
+}
+async function readPlistAsJson(plistPath) {
+    let output = '';
+    await (0, exec_1.exec)('plutil', ['-convert', 'json', '-o', '-', plistPath], {
+        silent: true,
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    });
+    return output;
+}
+async function lookupAppId(bundleId, token) {
+    const params = new URLSearchParams();
+    params.set('filter[bundleId]', bundleId);
+    const response = await fetchJson(`/apps?${params.toString()}`, token, 'Failed to locate App Store Connect application.');
+    const appId = response.data?.[0]?.id;
+    if (!appId) {
+        throw new Error(`Unable to find App Store Connect app for bundle id ${bundleId}.`);
+    }
+    return appId;
+}
+async function lookupBuildId(appId, buildNumber, platform, token) {
+    const params = new URLSearchParams();
+    params.set('filter[app]', appId);
+    params.set('filter[version]', buildNumber);
+    params.set('filter[preReleaseVersion.platform]', platform);
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        const response = await fetchJson(`/builds?${params.toString()}`, token, 'Failed to query builds for release note update.');
+        const buildId = response.data?.[0]?.id;
+        if (buildId) {
+            return buildId;
+        }
+        (0, core_1.warning)(`Build ${buildNumber} not yet visible in App Store Connect (attempt ${attempt + 1}/${MAX_ATTEMPTS}). Retrying in ${Math.round(RETRY_DELAY_MS / 1000)}s`);
+        await delay(RETRY_DELAY_MS);
+    }
+    throw new Error(`Timed out waiting for build ${buildNumber} to appear in App Store Connect.`);
+}
+async function lookupLocalizationId(buildId, token) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        const response = await fetchJson(`/builds/${buildId}/betaBuildLocalizations`, token, 'Failed to query beta build localizations.');
+        const localizationId = response.data?.[0]?.id;
+        if (localizationId) {
+            return localizationId;
+        }
+        (0, core_1.warning)(`Localization not ready for build ${buildId} (attempt ${attempt + 1}/${MAX_ATTEMPTS}). Retrying in ${Math.round(RETRY_DELAY_MS / 1000)}s`);
+        await delay(RETRY_DELAY_MS);
+    }
+    throw new Error(`Timed out locating beta build localization for build ${buildId}.`);
+}
+async function updateReleaseNotes(localizationId, releaseNotes, token) {
+    const payload = {
+        data: {
+            id: localizationId,
+            type: 'betaBuildLocalizations',
+            attributes: {
+                whatsNew: releaseNotes.slice(0, 4000)
+            }
+        }
+    };
+    await fetchJson(`/betaBuildLocalizations/${localizationId}`, token, 'Failed to update TestFlight release note.', 'PATCH', payload);
+    (0, core_1.info)('Successfully updated TestFlight release note.');
+}
+async function fetchJson(path, token, errorMessage, method = 'GET', body) {
+    const url = new URL(path, BASE_URL);
+    const response = await fetch(url, {
+        method,
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: method === 'PATCH' ? JSON.stringify(body) : undefined
+    });
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`${errorMessage} (${response.status}): ${text}`);
+    }
+    if (response.status === 204) {
+        return {};
+    }
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        return {};
+    }
+    return (await response.json());
+}
+async function delay(durationMs) {
+    return new Promise(resolve => {
+        setTimeout(resolve, durationMs);
+    });
+}
+
+
+/***/ }),
+
+/***/ 2794:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -15,7 +197,7 @@ const io_1 = __nccwpck_require__(4994);
 const fs_1 = __nccwpck_require__(9896);
 const exec_1 = __nccwpck_require__(5236);
 /**
- Upload the specified application.
+ Upload the specified application via iTMSTransporter.
  @param appPath The path to the app to upload.
  @param appType The type of app to upload (macos | ios | appletvos | visionos)
  @param apiKeyId The id of the API key to use (private key must already be installed)
@@ -24,19 +206,21 @@ const exec_1 = __nccwpck_require__(5236);
  */
 async function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
     const args = [
-        'altool',
-        '--output-format',
-        'xml',
-        '--upload-app',
-        '--file',
+        'iTMSTransporter',
+        '-m',
+        'upload',
+        '-assetFile',
         appPath,
-        '--type',
-        appType,
-        '--apiKey',
+        '-apiKey',
         apiKeyId,
-        '--apiIssuer',
-        issuerId
+        '-apiIssuer',
+        issuerId,
+        '-v',
+        'eXtreme'
     ];
+    if (appType !== '') {
+        args.push('-appPlatform', appType);
+    }
     await (0, exec_1.exec)('xcrun', args, options);
 }
 function privateKeysPath() {
@@ -25771,6 +25955,14 @@ module.exports = require("fs");
 
 /***/ }),
 
+/***/ 1943:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs/promises");
+
+/***/ }),
+
 /***/ 8611:
 /***/ ((module) => {
 
@@ -27619,7 +27811,8 @@ var exports = __webpack_exports__;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __nccwpck_require__(7484);
 const os_1 = __nccwpck_require__(857);
-const altool_1 = __nccwpck_require__(9985);
+const transporter_1 = __nccwpck_require__(2794);
+const releaseNotes_1 = __nccwpck_require__(1396);
 async function run() {
     try {
         if ((0, os_1.platform)() !== 'darwin') {
@@ -27630,6 +27823,7 @@ async function run() {
         const apiPrivateKey = (0, core_1.getInput)('api-private-key');
         const appPath = (0, core_1.getInput)('app-path');
         const appType = (0, core_1.getInput)('app-type');
+        const releaseNotes = (0, core_1.getInput)('release-notes');
         let output = '';
         const options = {};
         options.listeners = {
@@ -27637,10 +27831,18 @@ async function run() {
                 output += data.toString();
             }
         };
-        await (0, altool_1.installPrivateKey)(apiKeyId, apiPrivateKey);
-        await (0, altool_1.uploadApp)(appPath, appType, apiKeyId, issuerId, options);
-        await (0, altool_1.deleteAllPrivateKeys)();
-        (0, core_1.setOutput)('altool-response', output);
+        await (0, transporter_1.installPrivateKey)(apiKeyId, apiPrivateKey);
+        await (0, transporter_1.uploadApp)(appPath, appType, apiKeyId, issuerId, options);
+        await (0, releaseNotes_1.submitReleaseNotesIfProvided)({
+            releaseNotes,
+            appPath,
+            appType,
+            issuerId,
+            apiKeyId,
+            apiPrivateKey
+        });
+        await (0, transporter_1.deleteAllPrivateKeys)();
+        (0, core_1.setOutput)('transporter-response', output);
     }
     catch (error) {
         (0, core_1.setFailed)(error.message || 'An unknown error occurred.');
