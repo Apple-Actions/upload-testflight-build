@@ -39,7 +39,7 @@
     "eslint": "~9.39.0",
     "eslint-plugin-github": "~6.0.0",
     "knip": "~5.70.0",
-    "prettier": "~3.6.0",
+    "prettier": "~3.7.3",
     "typescript": "~5.9.0",
     "vitest": "~4.0.0"
   },
