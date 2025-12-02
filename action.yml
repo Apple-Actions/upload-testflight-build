@@ -21,9 +21,15 @@ inputs:
   release-notes:
     description: 'Optional TestFlight release note content to attach to the uploaded build'
     required: false
+  backend:
+    description: 'Upload backend to use (appstore-api | transporter | altool)'
+    required: false
+    default: 'appstore-api'
 outputs:
   transporter-response:
-    description: 'output from transporter'
+    description: 'output from chosen upload backend'
+  upload-backend:
+    description: 'The backend that performed the upload'
 runs:
   using: 'node24'
   main: 'dist/index.js'
