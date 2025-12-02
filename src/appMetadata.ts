@@ -4,7 +4,7 @@ import {join} from 'path'
 import {exec} from '@actions/exec'
 import {rmRF} from '@actions/io'
 
-export type AppMetadata = {
+type AppMetadata = {
   bundleId: string
   buildNumber: string
 }
