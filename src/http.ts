@@ -10,7 +10,8 @@ export async function fetchJson<T = unknown>(
   body?: unknown,
   extraHeaders?: Record<string, string>
 ): Promise<T> {
-  const url = new URL(path, BASE_URL)
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path
+  const url = new URL(normalizedPath, `${BASE_URL}/`)
   const headers = {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',

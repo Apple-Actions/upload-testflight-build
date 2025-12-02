@@ -299,7 +299,8 @@ exports.buildPlatform = buildPlatform;
 const core_1 = __nccwpck_require__(7484);
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
 async function fetchJson(path, token, errorMessage, method = 'GET', body, extraHeaders) {
-    const url = new URL(path, BASE_URL);
+    const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+    const url = new URL(normalizedPath, `${BASE_URL}/`);
     const headers = {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',

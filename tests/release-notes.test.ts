@@ -132,8 +132,11 @@ describe('release notes submission', () => {
 
         const responseQueue: Record<string, unknown> = {
           '/apps': {data: [{id: 'app-id'}]},
+          '/v1/apps': {data: [{id: 'app-id'}]},
           '/builds': {data: [{id: 'build-id'}]},
-          '/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]}
+          '/v1/builds': {data: [{id: 'build-id'}]},
+          '/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]},
+          '/v1/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]}
         }
 
         const data = responseQueue[
