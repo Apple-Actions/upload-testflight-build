@@ -1,3 +1,5 @@
+import {info} from '@actions/core'
+
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1'
 
 export async function fetchJson<T = unknown>(
@@ -9,19 +11,37 @@ export async function fetchJson<T = unknown>(
   extraHeaders?: Record<string, string>
 ): Promise<T> {
   const url = new URL(path, BASE_URL)
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    ...extraHeaders
+  }
+
+  const safeHeaders = {
+    ...headers,
+    Authorization: headers.Authorization ? '[REDACTED]' : undefined
+  }
+
+  const stringifiedBody = body ? JSON.stringify(body) : undefined
+  info(
+    `HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(
+      safeHeaders
+    )} body=${stringifiedBody ?? '<none>'}`
+  )
+
   const response = await fetch(url, {
     method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...extraHeaders
-    },
-    body: body ? JSON.stringify(body) : undefined
+    headers,
+    body: stringifiedBody
   })
 
+  const responseText = await response.text()
+  info(
+    `HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`
+  )
+
   if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`${errorMessage} (${response.status}): ${text}`)
+    throw new Error(`${errorMessage} (${response.status}): ${responseText}`)
   }
 
   if (response.status === 204) {
@@ -33,7 +53,7 @@ export async function fetchJson<T = unknown>(
     return {} as T
   }
 
-  return (await response.json()) as T
+  return JSON.parse(responseText) as T
 }
 
 export function buildPlatform(appType: string): string {

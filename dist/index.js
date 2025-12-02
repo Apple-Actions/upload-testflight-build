@@ -289,28 +289,37 @@ exports.transporterBackend = {
 /***/ }),
 
 /***/ 5978:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.fetchJson = fetchJson;
 exports.buildPlatform = buildPlatform;
+const core_1 = __nccwpck_require__(7484);
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
 async function fetchJson(path, token, errorMessage, method = 'GET', body, extraHeaders) {
     const url = new URL(path, BASE_URL);
+    const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...extraHeaders
+    };
+    const safeHeaders = {
+        ...headers,
+        Authorization: headers.Authorization ? '[REDACTED]' : undefined
+    };
+    const stringifiedBody = body ? JSON.stringify(body) : undefined;
+    (0, core_1.info)(`HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(safeHeaders)} body=${stringifiedBody ?? '<none>'}`);
     const response = await fetch(url, {
         method,
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            ...extraHeaders
-        },
-        body: body ? JSON.stringify(body) : undefined
+        headers,
+        body: stringifiedBody
     });
+    const responseText = await response.text();
+    (0, core_1.info)(`HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`);
     if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`${errorMessage} (${response.status}): ${text}`);
+        throw new Error(`${errorMessage} (${response.status}): ${responseText}`);
     }
     if (response.status === 204) {
         return {};
@@ -319,7 +328,7 @@ async function fetchJson(path, token, errorMessage, method = 'GET', body, extraH
     if (!contentType || !contentType.includes('application/json')) {
         return {};
     }
-    return (await response.json());
+    return JSON.parse(responseText);
 }
 function buildPlatform(appType) {
     switch (appType.toLowerCase()) {
