@@ -14,16 +14,23 @@ const VISIBILITY_DELAY_MS = 10000
 
 export const appStoreApiBackend: Uploader = {
   async upload(params: UploadParams): Promise<UploadResult> {
+    info('Starting App Store API upload backend.')
     const token = generateJwt(
       params.issuerId,
       params.apiKeyId,
       params.apiPrivateKey
     )
     const metadata = await extractAppMetadata(params.appPath)
+    info(
+      `Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}`
+    )
 
     const platform = buildPlatform(params.appType)
     const fileName = basename(params.appPath)
     const fileSize = statSync(params.appPath).size
+    info(
+      `Preparing build upload for platform=${platform}, file=${fileName}, size=${fileSize} bytes`
+    )
 
     const buildUpload = await createBuildUpload({
       bundleId: metadata.bundleId,
@@ -32,9 +39,14 @@ export const appStoreApiBackend: Uploader = {
       fileSize,
       token
     })
+    info(
+      `Created build upload id=${buildUpload.id}, operations=${buildUpload.uploadOperations.length}`
+    )
 
     await performUpload(buildUpload, params.appPath)
+    info('Finished uploading build chunks.')
     await completeBuildUpload(buildUpload.id, token)
+    info('Marked build upload as complete; waiting for processing.')
 
     await pollBuildProcessing({
       bundleId: metadata.bundleId,
@@ -111,7 +123,7 @@ async function performUpload(
 ): Promise<void> {
   const buffer = await fs.readFile(appPath)
 
-  for (const operation of upload.uploadOperations) {
+  for (const [index, operation] of upload.uploadOperations.entries()) {
     const slice = buffer.subarray(
       operation.offset,
       operation.offset + operation.length
@@ -136,6 +148,10 @@ async function performUpload(
         `Failed to upload build chunk (status ${response.status}): ${text}`
       )
     }
+
+    info(
+      `Uploaded chunk ${index + 1}/${upload.uploadOperations.length} (${slice.length} bytes).`
+    )
   }
 }
 
@@ -209,5 +225,9 @@ async function lookupBuildState(params: {
     'Failed to query builds for processing state.'
   )
 
-  return response.data?.[0]?.attributes?.processingState
+  const state = response.data?.[0]?.attributes?.processingState
+  if (state) {
+    info(`Build processing state: ${state}`)
+  }
+  return state
 }

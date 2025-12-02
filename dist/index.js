@@ -141,11 +141,14 @@ const VISIBILITY_ATTEMPTS = 10;
 const VISIBILITY_DELAY_MS = 10000;
 exports.appStoreApiBackend = {
     async upload(params) {
+        (0, core_1.info)('Starting App Store API upload backend.');
         const token = (0, jwt_1.generateJwt)(params.issuerId, params.apiKeyId, params.apiPrivateKey);
         const metadata = await (0, appMetadata_1.extractAppMetadata)(params.appPath);
+        (0, core_1.info)(`Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}`);
         const platform = (0, http_1.buildPlatform)(params.appType);
         const fileName = (0, path_1.basename)(params.appPath);
         const fileSize = (0, fs_1.statSync)(params.appPath).size;
+        (0, core_1.info)(`Preparing build upload for platform=${platform}, file=${fileName}, size=${fileSize} bytes`);
         const buildUpload = await createBuildUpload({
             bundleId: metadata.bundleId,
             platform,
@@ -153,8 +156,11 @@ exports.appStoreApiBackend = {
             fileSize,
             token
         });
+        (0, core_1.info)(`Created build upload id=${buildUpload.id}, operations=${buildUpload.uploadOperations.length}`);
         await performUpload(buildUpload, params.appPath);
+        (0, core_1.info)('Finished uploading build chunks.');
         await completeBuildUpload(buildUpload.id, token);
+        (0, core_1.info)('Marked build upload as complete; waiting for processing.');
         await pollBuildProcessing({
             bundleId: metadata.bundleId,
             buildNumber: metadata.buildNumber,
@@ -188,7 +194,7 @@ async function createBuildUpload(params) {
 }
 async function performUpload(upload, appPath) {
     const buffer = await fs_1.promises.readFile(appPath);
-    for (const operation of upload.uploadOperations) {
+    for (const [index, operation] of upload.uploadOperations.entries()) {
         const slice = buffer.subarray(operation.offset, operation.offset + operation.length);
         const headers = {};
         if (operation.requestHeaders) {
@@ -205,6 +211,7 @@ async function performUpload(upload, appPath) {
             const text = await response.text();
             throw new Error(`Failed to upload build chunk (status ${response.status}): ${text}`);
         }
+        (0, core_1.info)(`Uploaded chunk ${index + 1}/${upload.uploadOperations.length} (${slice.length} bytes).`);
     }
 }
 async function completeBuildUpload(uploadId, token) {
@@ -233,7 +240,11 @@ async function lookupBuildState(params) {
     query.set('filter[version]', params.buildNumber);
     query.set('filter[preReleaseVersion.platform]', params.platform);
     const response = await (0, http_1.fetchJson)(`/builds?${query.toString()}`, params.token, 'Failed to query builds for processing state.');
-    return response.data?.[0]?.attributes?.processingState;
+    const state = response.data?.[0]?.attributes?.processingState;
+    if (state) {
+        (0, core_1.info)(`Build processing state: ${state}`);
+    }
+    return state;
 }
 
 
@@ -28645,7 +28656,7 @@ async function run() {
         const releaseNotes = (0, core_1.getInput)('release-notes');
         const backendInput = (0, core_1.getInput)('backend') || 'appstore-api';
         const backend = (0, normalize_1.normalizeBackend)(backendInput);
-        (0, core_1.info)(`Using upload backend: ${backend}`);
+        (0, core_1.info)(`Using upload backend: ${backend} for appPath=${appPath}, appType=${appType}`);
         const factories = {
             'appstore-api': appstore_api_backend_1.appStoreApiBackend,
             transporter: transporterBackend_1.transporterBackend,
@@ -28663,7 +28674,9 @@ async function run() {
                 }
             }
         };
+        (0, core_1.info)('Installing API private key.');
         await (0, keys_1.installPrivateKey)(apiKeyId, apiPrivateKey);
+        (0, core_1.info)('Private key installed.');
         const result = await uploader.upload({
             appPath,
             appType,
@@ -28671,6 +28684,7 @@ async function run() {
             issuerId,
             apiPrivateKey
         }, execOptions);
+        (0, core_1.info)(`Upload finished via backend: ${result.backend}`);
         await (0, releaseNotes_1.submitReleaseNotesIfProvided)({
             releaseNotes,
             appPath,
@@ -28679,7 +28693,9 @@ async function run() {
             apiKeyId,
             apiPrivateKey
         });
+        (0, core_1.info)('Release notes step completed (or skipped).');
         await (0, keys_1.deleteAllPrivateKeys)();
+        (0, core_1.info)('Private keys cleaned up.');
         const responseText = result.log ?? output ?? '';
         (0, core_1.setOutput)('transporter-response', responseText);
         (0, core_1.setOutput)('upload-backend', result.backend);

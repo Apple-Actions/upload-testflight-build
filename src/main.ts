@@ -25,7 +25,9 @@ async function run(): Promise<void> {
     const backendInput: string = getInput('backend') || 'appstore-api'
 
     const backend = normalizeBackend(backendInput)
-    info(`Using upload backend: ${backend}`)
+    info(
+      `Using upload backend: ${backend} for appPath=${appPath}, appType=${appType}`
+    )
 
     const factories: UploadFactory = {
       'appstore-api': appStoreApiBackend,
@@ -47,7 +49,9 @@ async function run(): Promise<void> {
       }
     }
 
+    info('Installing API private key.')
     await installPrivateKey(apiKeyId, apiPrivateKey)
+    info('Private key installed.')
     const result = await uploader.upload(
       {
         appPath,
@@ -58,6 +62,7 @@ async function run(): Promise<void> {
       },
       execOptions
     )
+    info(`Upload finished via backend: ${result.backend}`)
     await submitReleaseNotesIfProvided({
       releaseNotes,
       appPath,
@@ -66,7 +71,9 @@ async function run(): Promise<void> {
       apiKeyId,
       apiPrivateKey
     })
+    info('Release notes step completed (or skipped).')
     await deleteAllPrivateKeys()
+    info('Private keys cleaned up.')
 
     const responseText = result.log ?? output ?? ''
     setOutput('transporter-response', responseText)
