@@ -28,10 +28,11 @@ async function extractAppMetadata(appPath) {
         const parsed = JSON.parse(infoJson);
         const bundleId = parsed['CFBundleIdentifier'];
         const buildNumber = parsed['CFBundleVersion'];
-        if (!bundleId || !buildNumber) {
-            throw new Error('Info.plist missing CFBundleIdentifier or CFBundleVersion.');
+        const shortVersion = parsed['CFBundleShortVersionString'];
+        if (!bundleId || !buildNumber || !shortVersion) {
+            throw new Error('Info.plist missing CFBundleIdentifier, CFBundleVersion, or CFBundleShortVersionString.');
         }
-        return { bundleId, buildNumber };
+        return { bundleId, buildNumber, shortVersion };
     }
     finally {
         await (0, io_1.rmRF)(workingDir);
@@ -135,6 +136,7 @@ const jwt_1 = __nccwpck_require__(1218);
 const http_1 = __nccwpck_require__(5978);
 const poll_1 = __nccwpck_require__(7643);
 const appMetadata_1 = __nccwpck_require__(5862);
+const lookup_app_id_1 = __nccwpck_require__(2598);
 const MAX_PROCESSING_ATTEMPTS = 20;
 const PROCESSING_DELAY_MS = 30000;
 const VISIBILITY_ATTEMPTS = 10;
@@ -144,18 +146,19 @@ exports.appStoreApiBackend = {
         (0, core_1.info)('Starting App Store API upload backend.');
         const token = (0, jwt_1.generateJwt)(params.issuerId, params.apiKeyId, params.apiPrivateKey);
         const metadata = await (0, appMetadata_1.extractAppMetadata)(params.appPath);
-        (0, core_1.info)(`Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}`);
+        (0, core_1.info)(`Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}, shortVersion=${metadata.shortVersion}`);
         const platform = (0, http_1.buildPlatform)(params.appType);
         const fileName = (0, path_1.basename)(params.appPath);
         const fileSize = (0, fs_1.statSync)(params.appPath).size;
         (0, core_1.info)(`Preparing build upload for platform=${platform}, file=${fileName}, size=${fileSize} bytes`);
+        const appId = await (0, lookup_app_id_1.lookupAppId)(metadata.bundleId, token);
+        (0, core_1.info)(`Resolved appId=${appId} for bundleId=${metadata.bundleId}`);
         const buildUpload = await createBuildUpload({
-            bundleId: metadata.bundleId,
+            appId,
             platform,
-            fileName,
-            fileSize,
-            token
-        });
+            cfBundleShortVersionString: metadata.shortVersion,
+            cfBundleVersion: metadata.buildNumber
+        }, token);
         (0, core_1.info)(`Created build upload id=${buildUpload.id}, operations=${buildUpload.uploadOperations.length}`);
         await performUpload(buildUpload, params.appPath);
         (0, core_1.info)('Finished uploading build chunks.');
@@ -170,19 +173,26 @@ exports.appStoreApiBackend = {
         return { backend: 'appstore-api', raw: buildUpload };
     }
 };
-async function createBuildUpload(params) {
+async function createBuildUpload(params, token) {
     const payload = {
         data: {
             type: 'buildUploads',
             attributes: {
-                bundleId: params.bundleId,
                 platform: params.platform,
-                fileName: params.fileName,
-                fileSize: params.fileSize
+                cfBundleShortVersionString: params.cfBundleShortVersionString,
+                cfBundleVersion: params.cfBundleVersion
+            },
+            relationships: {
+                app: {
+                    data: {
+                        type: 'apps',
+                        id: params.appId
+                    }
+                }
             }
         }
     };
-    const response = await (0, http_1.fetchJson)('/buildUploads', params.token, 'Failed to create App Store build upload.', 'POST', payload);
+    const response = await (0, http_1.fetchJson)('/buildUploads', token, 'Failed to create App Store build upload.', 'POST', payload);
     const uploadOperations = response.data.attributes.uploadOperations;
     if (!uploadOperations || uploadOperations.length === 0) {
         throw new Error('App Store API returned no upload operations.');
@@ -371,6 +381,28 @@ async function installPrivateKey(apiKeyId, apiPrivateKey) {
 }
 async function deleteAllPrivateKeys() {
     await (0, io_1.rmRF)(privateKeysPath());
+}
+
+
+/***/ }),
+
+/***/ 2598:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.lookupAppId = lookupAppId;
+const http_1 = __nccwpck_require__(5978);
+async function lookupAppId(bundleId, token) {
+    const params = new URLSearchParams();
+    params.set('filter[bundleId]', bundleId);
+    const response = await (0, http_1.fetchJson)(`/apps?${params.toString()}`, token, 'Failed to locate App Store Connect application.');
+    const appId = response.data?.[0]?.id;
+    if (!appId) {
+        throw new Error(`Unable to find App Store Connect app for bundle id ${bundleId}.`);
+    }
+    return appId;
 }
 
 

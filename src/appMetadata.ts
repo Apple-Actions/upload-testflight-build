@@ -7,6 +7,7 @@ import {rmRF} from '@actions/io'
 type AppMetadata = {
   bundleId: string
   buildNumber: string
+  shortVersion: string
 }
 
 export async function extractAppMetadata(
@@ -33,14 +34,15 @@ export async function extractAppMetadata(
 
     const bundleId = parsed['CFBundleIdentifier']
     const buildNumber = parsed['CFBundleVersion']
+    const shortVersion = parsed['CFBundleShortVersionString']
 
-    if (!bundleId || !buildNumber) {
+    if (!bundleId || !buildNumber || !shortVersion) {
       throw new Error(
-        'Info.plist missing CFBundleIdentifier or CFBundleVersion.'
+        'Info.plist missing CFBundleIdentifier, CFBundleVersion, or CFBundleShortVersionString.'
       )
     }
 
-    return {bundleId, buildNumber}
+    return {bundleId, buildNumber, shortVersion}
   } finally {
     await rmRF(workingDir)
   }

@@ -6,6 +6,7 @@ import {generateJwt} from '../auth/jwt'
 import {buildPlatform, fetchJson} from '../http'
 import {pollUntil} from '../poll'
 import {extractAppMetadata} from '../appMetadata'
+import {lookupAppId} from '../lookup-app-id'
 
 const MAX_PROCESSING_ATTEMPTS = 20
 const PROCESSING_DELAY_MS = 30000
@@ -22,23 +23,29 @@ export const appStoreApiBackend: Uploader = {
     )
     const metadata = await extractAppMetadata(params.appPath)
     info(
-      `Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}`
+      `Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}, shortVersion=${metadata.shortVersion}`
     )
 
     const platform = buildPlatform(params.appType)
     const fileName = basename(params.appPath)
     const fileSize = statSync(params.appPath).size
+
     info(
       `Preparing build upload for platform=${platform}, file=${fileName}, size=${fileSize} bytes`
     )
 
-    const buildUpload = await createBuildUpload({
-      bundleId: metadata.bundleId,
-      platform,
-      fileName,
-      fileSize,
+    const appId = await lookupAppId(metadata.bundleId, token)
+    info(`Resolved appId=${appId} for bundleId=${metadata.bundleId}`)
+
+    const buildUpload = await createBuildUpload(
+      {
+        appId,
+        platform,
+        cfBundleShortVersionString: metadata.shortVersion,
+        cfBundleVersion: metadata.buildNumber
+      },
       token
-    })
+    )
     info(
       `Created build upload id=${buildUpload.id}, operations=${buildUpload.uploadOperations.length}`
     )
@@ -72,21 +79,30 @@ type UploadOperation = {
   requestHeaders?: Array<{name: string; value: string}>
 }
 
-async function createBuildUpload(params: {
-  bundleId: string
-  platform: string
-  fileName: string
-  fileSize: number
+async function createBuildUpload(
+  params: {
+    appId: string
+    platform: string
+    cfBundleShortVersionString: string
+    cfBundleVersion: string
+  },
   token: string
-}): Promise<BuildUpload> {
+): Promise<BuildUpload> {
   const payload = {
     data: {
       type: 'buildUploads',
       attributes: {
-        bundleId: params.bundleId,
         platform: params.platform,
-        fileName: params.fileName,
-        fileSize: params.fileSize
+        cfBundleShortVersionString: params.cfBundleShortVersionString,
+        cfBundleVersion: params.cfBundleVersion
+      },
+      relationships: {
+        app: {
+          data: {
+            type: 'apps',
+            id: params.appId
+          }
+        }
       }
     }
   }
@@ -100,7 +116,7 @@ async function createBuildUpload(params: {
     }
   }>(
     '/buildUploads',
-    params.token,
+    token,
     'Failed to create App Store build upload.',
     'POST',
     payload

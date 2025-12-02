@@ -55,7 +55,8 @@ describe('release notes submission', () => {
             Buffer.from(
               JSON.stringify({
                 CFBundleIdentifier: 'com.example.app',
-                CFBundleVersion: '123'
+                CFBundleVersion: '123',
+                CFBundleShortVersionString: '1.2.3'
               })
             )
           )
