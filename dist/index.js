@@ -393,7 +393,9 @@ exports.fetchJson = fetchJson;
 exports.buildPlatform = buildPlatform;
 const core_1 = __nccwpck_require__(7484);
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
-async function fetchJson(path, token, errorMessage, method = 'GET', body, extraHeaders) {
+const RETRY_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+const DEFAULT_RETRY = { retries: 3, baseDelayMs: 1000, factor: 2 };
+async function fetchJson(path, token, errorMessage, method = 'GET', body, extraHeaders, retryOptions = DEFAULT_RETRY) {
     const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
     const url = new URL(normalizedPath, `${BASE_URL}/`);
     const headers = {
@@ -407,11 +409,11 @@ async function fetchJson(path, token, errorMessage, method = 'GET', body, extraH
     };
     const stringifiedBody = body ? JSON.stringify(body) : undefined;
     (0, core_1.info)(`HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(safeHeaders)} body=${stringifiedBody ?? '<none>'}`);
-    const response = await fetch(url, {
+    const response = await performWithRetry(() => fetch(url, {
         method,
         headers,
         body: stringifiedBody
-    });
+    }), retryOptions, `${method} ${url.toString()}`);
     const responseText = await response.text();
     (0, core_1.info)(`HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`);
     if (!response.ok) {
@@ -437,6 +439,37 @@ function buildPlatform(appType) {
         default:
             return 'IOS';
     }
+}
+async function performWithRetry(fn, retryOptions, label) {
+    let attempt = 0;
+    let lastError;
+    while (attempt <= retryOptions.retries) {
+        try {
+            const response = await fn();
+            if (!RETRY_STATUS_CODES.has(response.status)) {
+                return response;
+            }
+            lastError = new Error(`${label} responded with retryable status ${response.status}`);
+        }
+        catch (error) {
+            lastError = error;
+        }
+        if (attempt === retryOptions.retries) {
+            break;
+        }
+        const backoff = retryOptions.baseDelayMs * Math.pow(retryOptions.factor, attempt);
+        (0, core_1.info)(`Retrying ${label} after ${backoff}ms (attempt ${attempt + 1})`);
+        await delay(backoff);
+        attempt += 1;
+    }
+    throw lastError instanceof Error
+        ? lastError
+        : new Error(`${label} failed after retries`);
+}
+async function delay(durationMs) {
+    return new Promise(resolve => {
+        setTimeout(resolve, durationMs);
+    });
 }
 
 
