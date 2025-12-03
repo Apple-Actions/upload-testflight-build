@@ -1,6 +1,6 @@
 import {ExecOptions} from '@actions/exec'
 
-export type UploadBackend = 'appstore-api' | 'transporter' | 'altool'
+export type UploadBackend = 'appstoreApi' | 'transporter' | 'altool'
 
 export type UploadParams = {
   appPath: string

@@ -3,8 +3,8 @@ import type {ExecOptions} from '@actions/exec/lib/interfaces'
 import {exec} from '@actions/exec'
 import {mkdirP, rmRF} from '@actions/io'
 import {writeFileSync} from 'fs'
-import {uploadApp} from '../src/transporter'
-import {installPrivateKey, deleteAllPrivateKeys} from '../src/keys'
+import {uploadApp} from '../src/backends/transporter'
+import {installPrivateKey, deleteAllPrivateKeys} from '../src/utils/keys'
 
 vi.mock('@actions/exec', () => ({
   exec: vi.fn().mockResolvedValue(0)

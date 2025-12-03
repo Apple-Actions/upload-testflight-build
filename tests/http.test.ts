@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {buildPlatform} from '../src/http'
+import {buildPlatform} from '../src/utils/http'
 
 describe('buildPlatform', () => {
   it('maps known platforms', () => {

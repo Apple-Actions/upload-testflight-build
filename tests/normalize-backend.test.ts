@@ -1,9 +1,10 @@
 import {describe, it, expect} from 'vitest'
-import {normalizeBackend} from '../src/backends/normalize'
+import {normalizeBackend} from '../src/utils/normalize-backend'
 
 describe('normalizeBackend', () => {
   it('accepts valid backends regardless of case', () => {
-    expect(normalizeBackend('appstore-api')).toBe('appstore-api')
+    expect(normalizeBackend('appstore-api')).toBe('appstoreApi')
+    expect(normalizeBackend('APPSTOREAPI')).toBe('appstoreApi')
     expect(normalizeBackend('Transporter')).toBe('transporter')
     expect(normalizeBackend('ALTOOL')).toBe('altool')
   })

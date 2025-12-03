@@ -1,12 +1,12 @@
 import {getInput, setOutput, setFailed, info} from '@actions/core'
 import {platform} from 'os'
 import {submitReleaseNotesIfProvided} from './releaseNotes'
-import {installPrivateKey, deleteAllPrivateKeys} from './keys'
+import {installPrivateKey, deleteAllPrivateKeys} from './utils/keys'
 import {UploadFactory} from './backends/types'
-import {transporterBackend} from './backends/transporterBackend'
-import {altoolBackend} from './backends/altoolBackend'
-import {appStoreApiBackend} from './backends/appstore-api-backend'
-import {normalizeBackend} from './backends/normalize'
+import {transporter} from './backends/transporter'
+import {altool} from './backends/altool'
+import {appstoreApi} from './backends/appstore-api'
+import {normalizeBackend} from './utils/normalize-backend'
 
 import {ExecOptions} from '@actions/exec/lib/interfaces'
 
@@ -22,7 +22,7 @@ async function run(): Promise<void> {
     const appPath: string = getInput('app-path')
     const appType: string = getInput('app-type')
     const releaseNotes: string = getInput('release-notes')
-    const backendInput: string = getInput('backend') || 'appstore-api'
+    const backendInput: string = getInput('backend') || 'appstoreApi'
 
     const backend = normalizeBackend(backendInput)
     info(
@@ -30,9 +30,9 @@ async function run(): Promise<void> {
     )
 
     const factories: UploadFactory = {
-      'appstore-api': appStoreApiBackend,
-      transporter: transporterBackend,
-      altool: altoolBackend
+      appstoreApi,
+      transporter,
+      altool
     }
 
     const uploader = factories[backend]

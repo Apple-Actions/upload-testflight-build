@@ -1,59 +1,6 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 5862:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.extractAppMetadata = extractAppMetadata;
-const promises_1 = __nccwpck_require__(1943);
-const os_1 = __nccwpck_require__(857);
-const path_1 = __nccwpck_require__(6928);
-const exec_1 = __nccwpck_require__(5236);
-const io_1 = __nccwpck_require__(4994);
-async function extractAppMetadata(appPath) {
-    const workingDir = await (0, promises_1.mkdtemp)((0, path_1.join)((0, os_1.tmpdir)(), 'upload-testflight-'));
-    try {
-        await (0, exec_1.exec)('ditto', ['-xk', appPath, workingDir], { silent: true });
-        const payloadDirectory = (0, path_1.join)(workingDir, 'Payload');
-        const entries = await (0, promises_1.readdir)(payloadDirectory);
-        const appDirectory = entries.find(entry => entry.endsWith('.app'));
-        if (!appDirectory) {
-            throw new Error('Unable to locate *.app bundle inside TestFlight payload.');
-        }
-        const infoPath = (0, path_1.join)(payloadDirectory, appDirectory, 'Info.plist');
-        const infoJson = await readPlistAsJson(infoPath);
-        const parsed = JSON.parse(infoJson);
-        const bundleId = parsed['CFBundleIdentifier'];
-        const buildNumber = parsed['CFBundleVersion'];
-        const shortVersion = parsed['CFBundleShortVersionString'];
-        if (!bundleId || !buildNumber || !shortVersion) {
-            throw new Error('Info.plist missing CFBundleIdentifier, CFBundleVersion, or CFBundleShortVersionString.');
-        }
-        return { bundleId, buildNumber, shortVersion };
-    }
-    finally {
-        await (0, io_1.rmRF)(workingDir);
-    }
-}
-async function readPlistAsJson(plistPath) {
-    let output = '';
-    await (0, exec_1.exec)('plutil', ['-convert', 'json', '-o', '-', plistPath], {
-        silent: true,
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
-            }
-        }
-    });
-    return output;
-}
-
-
-/***/ }),
-
 /***/ 1218:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -92,15 +39,15 @@ function generateJwt(issuerId, apiKeyId, apiPrivateKey, ttlSeconds = 600) {
 
 /***/ }),
 
-/***/ 3337:
+/***/ 9373:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.altoolBackend = void 0;
+exports.altool = void 0;
 const exec_1 = __nccwpck_require__(5236);
-exports.altoolBackend = {
+exports.altool = {
     async upload(params, execOptions) {
         const args = [
             '--upload-app',
@@ -122,26 +69,26 @@ exports.altoolBackend = {
 
 /***/ }),
 
-/***/ 4801:
+/***/ 8727:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.appStoreApiBackend = void 0;
+exports.appstoreApi = void 0;
 const path_1 = __nccwpck_require__(6928);
 const fs_1 = __nccwpck_require__(9896);
 const core_1 = __nccwpck_require__(7484);
 const jwt_1 = __nccwpck_require__(1218);
-const http_1 = __nccwpck_require__(5978);
-const poll_1 = __nccwpck_require__(7643);
-const appMetadata_1 = __nccwpck_require__(5862);
-const lookup_app_id_1 = __nccwpck_require__(2598);
+const http_1 = __nccwpck_require__(5212);
+const poll_1 = __nccwpck_require__(4697);
+const appMetadata_1 = __nccwpck_require__(6236);
+const lookup_app_id_1 = __nccwpck_require__(4720);
 const MAX_PROCESSING_ATTEMPTS = 20;
 const PROCESSING_DELAY_MS = 30000;
 const VISIBILITY_ATTEMPTS = 10;
 const VISIBILITY_DELAY_MS = 10000;
-exports.appStoreApiBackend = {
+exports.appstoreApi = {
     async upload(params) {
         (0, core_1.info)('Starting App Store API upload backend.');
         const token = (0, jwt_1.generateJwt)(params.issuerId, params.apiKeyId, params.apiPrivateKey);
@@ -170,7 +117,7 @@ exports.appStoreApiBackend = {
             platform,
             token
         });
-        return { backend: 'appstore-api', raw: buildUpload };
+        return { backend: 'appstoreApi', raw: buildUpload };
     }
 };
 async function createBuildUpload(params, token) {
@@ -260,177 +207,40 @@ async function lookupBuildState(params) {
 
 /***/ }),
 
-/***/ 9787:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.normalizeBackend = normalizeBackend;
-function normalizeBackend(value) {
-    const normalized = value.toLowerCase();
-    if (normalized === 'appstore-api' ||
-        normalized === 'transporter' ||
-        normalized === 'altool') {
-        return normalized;
-    }
-    throw new Error(`Invalid backend '${value}'. Allowed values: appstore-api | transporter | altool.`);
-}
-
-
-/***/ }),
-
-/***/ 6148:
+/***/ 2046:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.transporterBackend = void 0;
-const transporter_1 = __nccwpck_require__(2794);
-exports.transporterBackend = {
+exports.transporter = void 0;
+exports.uploadApp = uploadApp;
+const exec_1 = __nccwpck_require__(5236);
+async function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
+    const args = [
+        'iTMSTransporter',
+        '-m',
+        'upload',
+        '-assetFile',
+        appPath,
+        '-apiKey',
+        apiKeyId,
+        '-apiIssuer',
+        issuerId,
+        '-v',
+        'eXtreme'
+    ];
+    if (appType !== '') {
+        args.push('-appPlatform', appType);
+    }
+    await (0, exec_1.exec)('xcrun', args, options);
+}
+exports.transporter = {
     async upload(params, execOptions) {
-        await (0, transporter_1.uploadApp)(params.appPath, params.appType, params.apiKeyId, params.issuerId, execOptions);
+        await uploadApp(params.appPath, params.appType, params.apiKeyId, params.issuerId, execOptions);
         return { backend: 'transporter', log: execOptions ? '' : undefined };
     }
 };
-
-
-/***/ }),
-
-/***/ 5978:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.fetchJson = fetchJson;
-exports.buildPlatform = buildPlatform;
-const core_1 = __nccwpck_require__(7484);
-const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
-async function fetchJson(path, token, errorMessage, method = 'GET', body, extraHeaders) {
-    const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
-    const url = new URL(normalizedPath, `${BASE_URL}/`);
-    const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        ...extraHeaders
-    };
-    const safeHeaders = {
-        ...headers,
-        Authorization: headers.Authorization ? '[REDACTED]' : undefined
-    };
-    const stringifiedBody = body ? JSON.stringify(body) : undefined;
-    (0, core_1.info)(`HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(safeHeaders)} body=${stringifiedBody ?? '<none>'}`);
-    const response = await fetch(url, {
-        method,
-        headers,
-        body: stringifiedBody
-    });
-    const responseText = await response.text();
-    (0, core_1.info)(`HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`);
-    if (!response.ok) {
-        throw new Error(`${errorMessage} (${response.status}): ${responseText}`);
-    }
-    if (response.status === 204) {
-        return {};
-    }
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-        return {};
-    }
-    return JSON.parse(responseText);
-}
-function buildPlatform(appType) {
-    switch (appType.toLowerCase()) {
-        case 'macos':
-            return 'MAC_OS';
-        case 'appletvos':
-            return 'TV_OS';
-        case 'visionos':
-            return 'VISION_OS';
-        default:
-            return 'IOS';
-    }
-}
-
-
-/***/ }),
-
-/***/ 3618:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.installPrivateKey = installPrivateKey;
-exports.deleteAllPrivateKeys = deleteAllPrivateKeys;
-const path_1 = __nccwpck_require__(6928);
-const io_1 = __nccwpck_require__(4994);
-const fs_1 = __nccwpck_require__(9896);
-function privateKeysPath() {
-    const home = process.env['HOME'] || '';
-    if (home === '') {
-        throw new Error('Unable to determine user HOME path');
-    }
-    return (0, path_1.join)(home, 'private_keys');
-}
-async function installPrivateKey(apiKeyId, apiPrivateKey) {
-    await (0, io_1.mkdirP)(privateKeysPath());
-    (0, fs_1.writeFileSync)((0, path_1.join)(privateKeysPath(), `AuthKey_${apiKeyId}.p8`), apiPrivateKey);
-}
-async function deleteAllPrivateKeys() {
-    await (0, io_1.rmRF)(privateKeysPath());
-}
-
-
-/***/ }),
-
-/***/ 2598:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.lookupAppId = lookupAppId;
-const http_1 = __nccwpck_require__(5978);
-async function lookupAppId(bundleId, token) {
-    const params = new URLSearchParams();
-    params.set('filter[bundleId]', bundleId);
-    const response = await (0, http_1.fetchJson)(`/apps?${params.toString()}`, token, 'Failed to locate App Store Connect application.');
-    const appId = response.data?.[0]?.id;
-    if (!appId) {
-        throw new Error(`Unable to find App Store Connect app for bundle id ${bundleId}.`);
-    }
-    return appId;
-}
-
-
-/***/ }),
-
-/***/ 7643:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.pollUntil = pollUntil;
-async function pollUntil(action, predicate, options) {
-    for (let attempt = 0; attempt < options.attempts; attempt++) {
-        const result = await action();
-        if (result && predicate(result)) {
-            return result;
-        }
-        options.onRetry?.(attempt);
-        await delay(options.delayMs);
-    }
-    throw new Error('Exceeded maximum attempts while polling App Store Connect state.');
-}
-async function delay(durationMs) {
-    return new Promise(resolve => {
-        setTimeout(resolve, durationMs);
-    });
-}
 
 
 /***/ }),
@@ -444,9 +254,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.submitReleaseNotesIfProvided = submitReleaseNotesIfProvided;
 const core_1 = __nccwpck_require__(7484);
 const jwt_1 = __nccwpck_require__(1218);
-const appMetadata_1 = __nccwpck_require__(5862);
-const http_1 = __nccwpck_require__(5978);
-const poll_1 = __nccwpck_require__(7643);
+const appMetadata_1 = __nccwpck_require__(6236);
+const http_1 = __nccwpck_require__(5212);
+const poll_1 = __nccwpck_require__(4697);
 const MAX_ATTEMPTS = 20;
 const RETRY_DELAY_MS = 30000;
 async function submitReleaseNotesIfProvided(params) {
@@ -520,40 +330,215 @@ async function updateReleaseNotes(localizationId, releaseNotes, token) {
 
 /***/ }),
 
-/***/ 2794:
+/***/ 6236:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uploadApp = uploadApp;
+exports.extractAppMetadata = extractAppMetadata;
+const promises_1 = __nccwpck_require__(1943);
+const os_1 = __nccwpck_require__(857);
+const path_1 = __nccwpck_require__(6928);
 const exec_1 = __nccwpck_require__(5236);
-/**
- Upload the specified application via iTMSTransporter.
- @param appPath The path to the app to upload.
- @param appType The type of app to upload (macos | ios | appletvos | visionos)
- @param apiKeyId The id of the API key to use (private key must already be installed)
- @param issuerId The issuer identifier of the API key.
- @param options (Optional) Command execution options.
- */
-async function uploadApp(appPath, appType, apiKeyId, issuerId, options) {
-    const args = [
-        'iTMSTransporter',
-        '-m',
-        'upload',
-        '-assetFile',
-        appPath,
-        '-apiKey',
-        apiKeyId,
-        '-apiIssuer',
-        issuerId,
-        '-v',
-        'eXtreme'
-    ];
-    if (appType !== '') {
-        args.push('-appPlatform', appType);
+const io_1 = __nccwpck_require__(4994);
+async function extractAppMetadata(appPath) {
+    const workingDir = await (0, promises_1.mkdtemp)((0, path_1.join)((0, os_1.tmpdir)(), 'upload-testflight-'));
+    try {
+        await (0, exec_1.exec)('ditto', ['-xk', appPath, workingDir], { silent: true });
+        const payloadDirectory = (0, path_1.join)(workingDir, 'Payload');
+        const entries = await (0, promises_1.readdir)(payloadDirectory);
+        const appDirectory = entries.find(entry => entry.endsWith('.app'));
+        if (!appDirectory) {
+            throw new Error('Unable to locate *.app bundle inside TestFlight payload.');
+        }
+        const infoPath = (0, path_1.join)(payloadDirectory, appDirectory, 'Info.plist');
+        const infoJson = await readPlistAsJson(infoPath);
+        const parsed = JSON.parse(infoJson);
+        const bundleId = parsed['CFBundleIdentifier'];
+        const buildNumber = parsed['CFBundleVersion'];
+        const shortVersion = parsed['CFBundleShortVersionString'];
+        if (!bundleId || !buildNumber || !shortVersion) {
+            throw new Error('Info.plist missing CFBundleIdentifier, CFBundleVersion, or CFBundleShortVersionString.');
+        }
+        return { bundleId, buildNumber, shortVersion };
     }
-    await (0, exec_1.exec)('xcrun', args, options);
+    finally {
+        await (0, io_1.rmRF)(workingDir);
+    }
+}
+async function readPlistAsJson(plistPath) {
+    let output = '';
+    await (0, exec_1.exec)('plutil', ['-convert', 'json', '-o', '-', plistPath], {
+        silent: true,
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    });
+    return output;
+}
+
+
+/***/ }),
+
+/***/ 5212:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.fetchJson = fetchJson;
+exports.buildPlatform = buildPlatform;
+const core_1 = __nccwpck_require__(7484);
+const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
+async function fetchJson(path, token, errorMessage, method = 'GET', body, extraHeaders) {
+    const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+    const url = new URL(normalizedPath, `${BASE_URL}/`);
+    const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...extraHeaders
+    };
+    const safeHeaders = {
+        ...headers,
+        Authorization: headers.Authorization ? '[REDACTED]' : undefined
+    };
+    const stringifiedBody = body ? JSON.stringify(body) : undefined;
+    (0, core_1.info)(`HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(safeHeaders)} body=${stringifiedBody ?? '<none>'}`);
+    const response = await fetch(url, {
+        method,
+        headers,
+        body: stringifiedBody
+    });
+    const responseText = await response.text();
+    (0, core_1.info)(`HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`);
+    if (!response.ok) {
+        throw new Error(`${errorMessage} (${response.status}): ${responseText}`);
+    }
+    if (response.status === 204) {
+        return {};
+    }
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        return {};
+    }
+    return JSON.parse(responseText);
+}
+function buildPlatform(appType) {
+    switch (appType.toLowerCase()) {
+        case 'macos':
+            return 'MAC_OS';
+        case 'appletvos':
+            return 'TV_OS';
+        case 'visionos':
+            return 'VISION_OS';
+        default:
+            return 'IOS';
+    }
+}
+
+
+/***/ }),
+
+/***/ 7284:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.installPrivateKey = installPrivateKey;
+exports.deleteAllPrivateKeys = deleteAllPrivateKeys;
+const path_1 = __nccwpck_require__(6928);
+const io_1 = __nccwpck_require__(4994);
+const fs_1 = __nccwpck_require__(9896);
+function privateKeysPath() {
+    const home = process.env['HOME'] || '';
+    if (home === '') {
+        throw new Error('Unable to determine user HOME path');
+    }
+    return (0, path_1.join)(home, 'private_keys');
+}
+async function installPrivateKey(apiKeyId, apiPrivateKey) {
+    await (0, io_1.mkdirP)(privateKeysPath());
+    (0, fs_1.writeFileSync)((0, path_1.join)(privateKeysPath(), `AuthKey_${apiKeyId}.p8`), apiPrivateKey);
+}
+async function deleteAllPrivateKeys() {
+    await (0, io_1.rmRF)(privateKeysPath());
+}
+
+
+/***/ }),
+
+/***/ 4720:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.lookupAppId = lookupAppId;
+const http_1 = __nccwpck_require__(5212);
+async function lookupAppId(bundleId, token) {
+    const params = new URLSearchParams();
+    params.set('filter[bundleId]', bundleId);
+    const response = await (0, http_1.fetchJson)(`/apps?${params.toString()}`, token, 'Failed to locate App Store Connect application.');
+    const appId = response.data?.[0]?.id;
+    if (!appId) {
+        throw new Error(`Unable to find App Store Connect app for bundle id ${bundleId}.`);
+    }
+    return appId;
+}
+
+
+/***/ }),
+
+/***/ 9244:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.normalizeBackend = normalizeBackend;
+function normalizeBackend(value) {
+    const lower = value.toLowerCase();
+    if (lower === 'appstoreapi' || lower === 'appstore-api') {
+        return 'appstoreApi';
+    }
+    if (lower === 'transporter') {
+        return 'transporter';
+    }
+    if (lower === 'altool') {
+        return 'altool';
+    }
+    throw new Error(`Invalid backend '${value}'. Allowed values: appstoreApi | transporter | altool.`);
+}
+
+
+/***/ }),
+
+/***/ 4697:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.pollUntil = pollUntil;
+async function pollUntil(action, predicate, options) {
+    for (let attempt = 0; attempt < options.attempts; attempt++) {
+        const result = await action();
+        if (result && predicate(result)) {
+            return result;
+        }
+        options.onRetry?.(attempt);
+        await delay(options.delayMs);
+    }
+    throw new Error('Exceeded maximum attempts while polling App Store Connect state.');
+}
+async function delay(durationMs) {
+    return new Promise(resolve => {
+        setTimeout(resolve, durationMs);
+    });
 }
 
 
@@ -28680,11 +28665,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __nccwpck_require__(7484);
 const os_1 = __nccwpck_require__(857);
 const releaseNotes_1 = __nccwpck_require__(1396);
-const keys_1 = __nccwpck_require__(3618);
-const transporterBackend_1 = __nccwpck_require__(6148);
-const altoolBackend_1 = __nccwpck_require__(3337);
-const appstore_api_backend_1 = __nccwpck_require__(4801);
-const normalize_1 = __nccwpck_require__(9787);
+const keys_1 = __nccwpck_require__(7284);
+const transporter_1 = __nccwpck_require__(2046);
+const altool_1 = __nccwpck_require__(9373);
+const appstore_api_1 = __nccwpck_require__(8727);
+const normalize_backend_1 = __nccwpck_require__(9244);
 async function run() {
     try {
         if ((0, os_1.platform)() !== 'darwin') {
@@ -28696,13 +28681,13 @@ async function run() {
         const appPath = (0, core_1.getInput)('app-path');
         const appType = (0, core_1.getInput)('app-type');
         const releaseNotes = (0, core_1.getInput)('release-notes');
-        const backendInput = (0, core_1.getInput)('backend') || 'appstore-api';
-        const backend = (0, normalize_1.normalizeBackend)(backendInput);
+        const backendInput = (0, core_1.getInput)('backend') || 'appstoreApi';
+        const backend = (0, normalize_backend_1.normalizeBackend)(backendInput);
         (0, core_1.info)(`Using upload backend: ${backend} for appPath=${appPath}, appType=${appType}`);
         const factories = {
-            'appstore-api': appstore_api_backend_1.appStoreApiBackend,
-            transporter: transporterBackend_1.transporterBackend,
-            altool: altoolBackend_1.altoolBackend
+            appstoreApi: appstore_api_1.appstoreApi,
+            transporter: transporter_1.transporter,
+            altool: altool_1.altool
         };
         const uploader = factories[backend];
         if (!uploader) {

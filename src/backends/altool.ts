@@ -1,7 +1,7 @@
 import {exec, ExecOptions} from '@actions/exec'
 import {UploadParams, UploadResult, Uploader} from './types'
 
-export const altoolBackend: Uploader = {
+export const altool: Uploader = {
   async upload(
     params: UploadParams,
     execOptions?: ExecOptions

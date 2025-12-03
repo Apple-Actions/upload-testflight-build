@@ -1,8 +1,8 @@
 import {info, warning} from '@actions/core'
 import {generateJwt} from './auth/jwt'
-import {extractAppMetadata} from './appMetadata'
-import {buildPlatform, fetchJson} from './http'
-import {pollUntil} from './poll'
+import {extractAppMetadata} from './utils/appMetadata'
+import {buildPlatform, fetchJson} from './utils/http'
+import {pollUntil} from './utils/poll'
 
 const MAX_ATTEMPTS = 20
 const RETRY_DELAY_MS = 30000

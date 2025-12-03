@@ -3,17 +3,17 @@ import {statSync, promises as fs} from 'fs'
 import {warning, info} from '@actions/core'
 import {UploadParams, UploadResult, Uploader} from './types'
 import {generateJwt} from '../auth/jwt'
-import {buildPlatform, fetchJson} from '../http'
-import {pollUntil} from '../poll'
-import {extractAppMetadata} from '../appMetadata'
-import {lookupAppId} from '../lookup-app-id'
+import {buildPlatform, fetchJson} from '../utils/http'
+import {pollUntil} from '../utils/poll'
+import {extractAppMetadata} from '../utils/appMetadata'
+import {lookupAppId} from '../utils/lookup-app-id'
 
 const MAX_PROCESSING_ATTEMPTS = 20
 const PROCESSING_DELAY_MS = 30000
 const VISIBILITY_ATTEMPTS = 10
 const VISIBILITY_DELAY_MS = 10000
 
-export const appStoreApiBackend: Uploader = {
+export const appstoreApi: Uploader = {
   async upload(params: UploadParams): Promise<UploadResult> {
     info('Starting App Store API upload backend.')
     const token = generateJwt(
@@ -62,7 +62,7 @@ export const appStoreApiBackend: Uploader = {
       token
     })
 
-    return {backend: 'appstore-api', raw: buildUpload}
+    return {backend: 'appstoreApi', raw: buildUpload}
   }
 }
 

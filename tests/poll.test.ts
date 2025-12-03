@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {pollUntil} from '../src/poll'
+import {pollUntil} from '../src/utils/poll'
 
 describe('pollUntil', () => {
   it('resolves when predicate is satisfied', async () => {
