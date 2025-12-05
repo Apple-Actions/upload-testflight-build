@@ -394,7 +394,7 @@ exports.buildPlatform = buildPlatform;
 const core_1 = __nccwpck_require__(7484);
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
 const RETRY_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
-const DEFAULT_RETRY = { retries: 3, baseDelayMs: 1000, factor: 2 };
+const DEFAULT_RETRY = { retries: 5, baseDelayMs: 1000, factor: 2 };
 async function fetchJson(path, token, errorMessage, method = 'GET', body, extraHeaders, retryOptions = DEFAULT_RETRY) {
     const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
     const url = new URL(normalizedPath, `${BASE_URL}/`);

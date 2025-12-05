@@ -2,7 +2,7 @@ import {info} from '@actions/core'
 
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1'
 const RETRY_STATUS_CODES = new Set([429, 500, 502, 503, 504])
-const DEFAULT_RETRY: RetryOptions = {retries: 3, baseDelayMs: 1000, factor: 2}
+const DEFAULT_RETRY: RetryOptions = {retries: 5, baseDelayMs: 1000, factor: 2}
 
 type RetryOptions = {
   retries: number
