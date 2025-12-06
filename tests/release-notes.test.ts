@@ -12,6 +12,7 @@ const readdirMock = vi.hoisted(() => vi.fn())
 const rmRFMock = vi.hoisted(() => vi.fn())
 const infoMock = vi.hoisted(() => vi.fn())
 const warningMock = vi.hoisted(() => vi.fn())
+const debugMock = vi.hoisted(() => vi.fn())
 const createSignMock = vi.hoisted(() => vi.fn())
 const fetchMock = vi.hoisted(() => vi.fn())
 
@@ -23,7 +24,8 @@ vi.mock('fs/promises', () => ({
 vi.mock('@actions/io', () => ({rmRF: rmRFMock}))
 vi.mock('@actions/core', () => ({
   info: infoMock,
-  warning: warningMock
+  warning: warningMock,
+  debug: debugMock
 }))
 vi.mock('crypto', () => ({createSign: createSignMock}))
 
@@ -55,7 +57,8 @@ describe('release notes submission', () => {
             Buffer.from(
               JSON.stringify({
                 CFBundleIdentifier: 'com.example.app',
-                CFBundleVersion: '123'
+                CFBundleVersion: '123',
+                CFBundleShortVersionString: '1.2.3'
               })
             )
           )
@@ -132,8 +135,11 @@ describe('release notes submission', () => {
 
         const responseQueue: Record<string, unknown> = {
           '/apps': {data: [{id: 'app-id'}]},
+          '/v1/apps': {data: [{id: 'app-id'}]},
           '/builds': {data: [{id: 'build-id'}]},
-          '/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]}
+          '/v1/builds': {data: [{id: 'build-id'}]},
+          '/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]},
+          '/v1/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]}
         }
 
         const data = responseQueue[

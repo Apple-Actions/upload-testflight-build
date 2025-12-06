@@ -15,14 +15,21 @@
 
 ```yaml
 - name: 'Upload app to TestFlight'
-  uses: apple-actions/upload-testflight-build@v3
+  uses: apple-actions/upload-testflight-build@v4
   with: 
     app-path: 'path/to/application.ipa' 
     issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
     api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
     release-notes: ${{ steps.generate_notes.outputs.whats_new }} # optional
+    backend: altool # optional: AppStoreAPI | transporter | altool (default: altool; case insensitive)
 ```
+
+> [!NOTE]
+> `transporter` backend requires Transporter to be installed on the runner.
+> The GitHub hosted runners (Xcode 14+) do not have Transporter installed by default.
+> You can either install it as part of your workflow or use a self-hosted runner with Transporter already installed.
+
 
 ## Additional Arguments
 
