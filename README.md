@@ -25,6 +25,12 @@
     backend: altool # optional: AppStoreAPI | transporter | altool (default: altool; case insensitive)
 ```
 
+> [!NOTE]
+> `transporter` backend requires Transporter to be installed on the runner.
+> The GitHub hosted runners (Xcode 14+) do not have Transporter installed by default.
+> You can either install it as part of your workflow or use a self-hosted runner with Transporter already installed.
+
+
 ## Additional Arguments
 
 See [action.yml](action.yml) for more details.
