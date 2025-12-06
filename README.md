@@ -15,14 +15,14 @@
 
 ```yaml
 - name: 'Upload app to TestFlight'
-  uses: apple-actions/upload-testflight-build@v3
+  uses: apple-actions/upload-testflight-build@v4
   with: 
     app-path: 'path/to/application.ipa' 
     issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
     api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
     release-notes: ${{ steps.generate_notes.outputs.whats_new }} # optional
-    backend: appstore-api # optional: appstore-api | transporter | altool (default: appstore-api)
+    backend: altool # optional: AppStoreAPI | transporter | altool (default: altool; case insensitive)
 ```
 
 ## Additional Arguments
