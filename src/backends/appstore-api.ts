@@ -1,6 +1,6 @@
 import {basename} from 'path'
 import {statSync, promises as fs} from 'fs'
-import {warning, info} from '@actions/core'
+import {warning, info, debug} from '@actions/core'
 import {UploadParams, UploadResult, Uploader} from './types'
 import {generateJwt} from '../auth/jwt'
 import {buildPlatform, fetchJson} from '../utils/http'
@@ -22,7 +22,7 @@ export const appstoreApi: Uploader = {
       params.apiPrivateKey
     )
     const metadata = await extractAppMetadata(params.appPath)
-    info(
+    debug(
       `Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}, shortVersion=${metadata.shortVersion}`
     )
 
@@ -30,12 +30,12 @@ export const appstoreApi: Uploader = {
     const fileName = basename(params.appPath)
     const fileSize = statSync(params.appPath).size
 
-    info(
+    debug(
       `Preparing build upload for platform=${platform}, file=${fileName}, size=${fileSize} bytes`
     )
 
     const appId = await lookupAppId(metadata.bundleId, token)
-    info(`Resolved appId=${appId} for bundleId=${metadata.bundleId}`)
+    debug(`Resolved appId=${appId} for bundleId=${metadata.bundleId}`)
 
     const buildUpload = await createBuildUpload(
       {
@@ -46,7 +46,7 @@ export const appstoreApi: Uploader = {
       },
       token
     )
-    info(
+    debug(
       `Created build upload id=${buildUpload.id}, operations=${buildUpload.uploadOperations.length}`
     )
 
@@ -165,7 +165,7 @@ async function performUpload(
       )
     }
 
-    info(
+    debug(
       `Uploaded chunk ${index + 1}/${upload.uploadOperations.length} (${slice.length} bytes).`
     )
   }
@@ -243,7 +243,7 @@ async function lookupBuildState(params: {
 
   const state = response.data?.[0]?.attributes?.processingState
   if (state) {
-    info(`Build processing state: ${state}`)
+    debug(`Build processing state: ${state}`)
   }
   return state
 }

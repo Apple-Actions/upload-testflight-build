@@ -12,6 +12,7 @@ const readdirMock = vi.hoisted(() => vi.fn())
 const rmRFMock = vi.hoisted(() => vi.fn())
 const infoMock = vi.hoisted(() => vi.fn())
 const warningMock = vi.hoisted(() => vi.fn())
+const debugMock = vi.hoisted(() => vi.fn())
 const createSignMock = vi.hoisted(() => vi.fn())
 const fetchMock = vi.hoisted(() => vi.fn())
 
@@ -23,7 +24,8 @@ vi.mock('fs/promises', () => ({
 vi.mock('@actions/io', () => ({rmRF: rmRFMock}))
 vi.mock('@actions/core', () => ({
   info: infoMock,
-  warning: warningMock
+  warning: warningMock,
+  debug: debugMock
 }))
 vi.mock('crypto', () => ({createSign: createSignMock}))
 

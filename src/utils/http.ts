@@ -1,4 +1,4 @@
-import {info} from '@actions/core'
+import {debug} from '@actions/core'
 
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1'
 const RETRY_STATUS_CODES = new Set([429, 500, 502, 503, 504])
@@ -33,7 +33,7 @@ export async function fetchJson<T = unknown>(
   }
 
   const stringifiedBody = body ? JSON.stringify(body) : undefined
-  info(
+  debug(
     `HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(
       safeHeaders
     )} body=${stringifiedBody ?? '<none>'}`
@@ -51,7 +51,7 @@ export async function fetchJson<T = unknown>(
   )
 
   const responseText = await response.text()
-  info(
+  debug(
     `HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`
   )
 
@@ -112,7 +112,7 @@ async function performWithRetry(
 
     const backoff =
       retryOptions.baseDelayMs * Math.pow(retryOptions.factor, attempt)
-    info(`Retrying ${label} after ${backoff}ms (attempt ${attempt + 1})`)
+    debug(`Retrying ${label} after ${backoff}ms (attempt ${attempt + 1})`)
     await delay(backoff)
     attempt += 1
   }

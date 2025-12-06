@@ -93,20 +93,20 @@ exports.appstoreApi = {
         (0, core_1.info)('Starting App Store API upload backend.');
         const token = (0, jwt_1.generateJwt)(params.issuerId, params.apiKeyId, params.apiPrivateKey);
         const metadata = await (0, appMetadata_1.extractAppMetadata)(params.appPath);
-        (0, core_1.info)(`Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}, shortVersion=${metadata.shortVersion}`);
+        (0, core_1.debug)(`Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}, shortVersion=${metadata.shortVersion}`);
         const platform = (0, http_1.buildPlatform)(params.appType);
         const fileName = (0, path_1.basename)(params.appPath);
         const fileSize = (0, fs_1.statSync)(params.appPath).size;
-        (0, core_1.info)(`Preparing build upload for platform=${platform}, file=${fileName}, size=${fileSize} bytes`);
+        (0, core_1.debug)(`Preparing build upload for platform=${platform}, file=${fileName}, size=${fileSize} bytes`);
         const appId = await (0, lookup_app_id_1.lookupAppId)(metadata.bundleId, token);
-        (0, core_1.info)(`Resolved appId=${appId} for bundleId=${metadata.bundleId}`);
+        (0, core_1.debug)(`Resolved appId=${appId} for bundleId=${metadata.bundleId}`);
         const buildUpload = await createBuildUpload({
             appId,
             platform,
             cfBundleShortVersionString: metadata.shortVersion,
             cfBundleVersion: metadata.buildNumber
         }, token);
-        (0, core_1.info)(`Created build upload id=${buildUpload.id}, operations=${buildUpload.uploadOperations.length}`);
+        (0, core_1.debug)(`Created build upload id=${buildUpload.id}, operations=${buildUpload.uploadOperations.length}`);
         await performUpload(buildUpload, params.appPath);
         (0, core_1.info)('Finished uploading build chunks.');
         await completeBuildUpload(buildUpload.id, token);
@@ -168,7 +168,7 @@ async function performUpload(upload, appPath) {
             const text = await response.text();
             throw new Error(`Failed to upload build chunk (status ${response.status}): ${text}`);
         }
-        (0, core_1.info)(`Uploaded chunk ${index + 1}/${upload.uploadOperations.length} (${slice.length} bytes).`);
+        (0, core_1.debug)(`Uploaded chunk ${index + 1}/${upload.uploadOperations.length} (${slice.length} bytes).`);
     }
 }
 async function completeBuildUpload(uploadId, token) {
@@ -199,7 +199,7 @@ async function lookupBuildState(params) {
     const response = await (0, http_1.fetchJson)(`/builds?${query.toString()}`, params.token, 'Failed to query builds for processing state.');
     const state = response.data?.[0]?.attributes?.processingState;
     if (state) {
-        (0, core_1.info)(`Build processing state: ${state}`);
+        (0, core_1.debug)(`Build processing state: ${state}`);
     }
     return state;
 }
@@ -408,14 +408,14 @@ async function fetchJson(path, token, errorMessage, method = 'GET', body, extraH
         Authorization: headers.Authorization ? '[REDACTED]' : undefined
     };
     const stringifiedBody = body ? JSON.stringify(body) : undefined;
-    (0, core_1.info)(`HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(safeHeaders)} body=${stringifiedBody ?? '<none>'}`);
+    (0, core_1.debug)(`HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(safeHeaders)} body=${stringifiedBody ?? '<none>'}`);
     const response = await performWithRetry(() => fetch(url, {
         method,
         headers,
         body: stringifiedBody
     }), retryOptions, `${method} ${url.toString()}`);
     const responseText = await response.text();
-    (0, core_1.info)(`HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`);
+    (0, core_1.debug)(`HTTP response: ${method} ${url.toString()} status=${response.status} ${response.statusText} body=${responseText}`);
     if (!response.ok) {
         throw new Error(`${errorMessage} (${response.status}): ${responseText}`);
     }
@@ -458,7 +458,7 @@ async function performWithRetry(fn, retryOptions, label) {
             break;
         }
         const backoff = retryOptions.baseDelayMs * Math.pow(retryOptions.factor, attempt);
-        (0, core_1.info)(`Retrying ${label} after ${backoff}ms (attempt ${attempt + 1})`);
+        (0, core_1.debug)(`Retrying ${label} after ${backoff}ms (attempt ${attempt + 1})`);
         await delay(backoff);
         attempt += 1;
     }
