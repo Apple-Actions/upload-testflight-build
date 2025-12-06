@@ -28714,7 +28714,7 @@ async function run() {
         const appPath = (0, core_1.getInput)('app-path');
         const appType = (0, core_1.getInput)('app-type');
         const releaseNotes = (0, core_1.getInput)('release-notes');
-        const backendInput = (0, core_1.getInput)('backend') || 'appstoreApi';
+        const backendInput = (0, core_1.getInput)('backend') || 'altool';
         const backend = (0, normalize_backend_1.normalizeBackend)(backendInput);
         (0, core_1.info)(`Using upload backend: ${backend} for appPath=${appPath}, appType=${appType}`);
         const factories = {

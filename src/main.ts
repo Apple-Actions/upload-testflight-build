@@ -22,7 +22,7 @@ async function run(): Promise<void> {
     const appPath: string = getInput('app-path')
     const appType: string = getInput('app-type')
     const releaseNotes: string = getInput('release-notes')
-    const backendInput: string = getInput('backend') || 'appstoreApi'
+    const backendInput: string = getInput('backend') || 'altool'
 
     const backend = normalizeBackend(backendInput)
     info(
