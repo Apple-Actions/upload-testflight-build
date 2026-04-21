@@ -52,6 +52,12 @@ async function run(): Promise<void> {
       )
     }
 
+    if (backend === 'appstoreApi' && appType.toLowerCase() === 'macos') {
+      throw new Error(
+        'The "appstore-api" backend only supports .ipa uploads. For macOS (.pkg) builds, set backend to "altool" or "transporter".'
+      )
+    }
+
     const execOptions: ExecOptions = {}
 
     info('Installing API private key.')

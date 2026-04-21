@@ -15,7 +15,6 @@ export type UploadParams = {
 export type UploadResult = {
   backend: UploadBackend
   raw?: unknown
-  log?: string
 }
 
 export interface Uploader {

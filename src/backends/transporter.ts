@@ -49,6 +49,6 @@ export const transporter: Uploader = {
       execOptions
     )
 
-    return {backend: 'transporter', log: execOptions ? '' : undefined}
+    return {backend: 'transporter'}
   }
 }

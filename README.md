@@ -43,6 +43,14 @@
 >
 > Alternatively, use a self-hosted runner that already has Transporter installed at `/usr/local/itms/bin/iTMSTransporter`.
 
+> [!NOTE]
+> The default `appstore-api` backend only supports `.ipa` uploads. For macOS (`.pkg`) builds, set `backend: altool` or `backend: transporter`.
+
+## Upgrading from v3 or earlier v4
+
+* The default upload backend is now `appstore-api` (uses the App Store Connect API directly and works on Linux and macOS runners). If you depended on the previous behavior, set `backend: altool` or `backend: transporter`.
+* The `transporter-response` output has been removed. Use the `upload-backend` output if you need to know which backend handled the upload.
+
 
 ## Additional Arguments
 

@@ -20,6 +20,6 @@ export const altool: Uploader = {
     ]
 
     await exec('xcrun', ['altool', ...args], execOptions)
-    return {backend: 'altool', log: execOptions ? '' : undefined}
+    return {backend: 'altool'}
   }
 }

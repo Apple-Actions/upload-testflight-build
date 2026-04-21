@@ -62,7 +62,7 @@ exports.altool = {
             '--verbose'
         ];
         await (0, exec_1.exec)('xcrun', ['altool', ...args], execOptions);
-        return { backend: 'altool', log: execOptions ? '' : undefined };
+        return { backend: 'altool' };
     }
 };
 
@@ -288,7 +288,7 @@ async function uploadApp(appPath, appType, apiKeyId, issuerId, transporterExecut
 exports.transporter = {
     async upload(params, execOptions) {
         await uploadApp(params.appPath, params.appType, params.apiKeyId, params.issuerId, params.transporterExecutablePath, execOptions);
-        return { backend: 'transporter', log: execOptions ? '' : undefined };
+        return { backend: 'transporter' };
     }
 };
 
@@ -45034,6 +45034,9 @@ async function run() {
         }
         if (backend !== 'appstoreApi' && (0, os_1.platform)() !== 'darwin') {
             throw new Error(`Backend "${backend}" requires a macOS runner (found ${(0, os_1.platform)()}).`);
+        }
+        if (backend === 'appstoreApi' && appType.toLowerCase() === 'macos') {
+            throw new Error('The "appstore-api" backend only supports .ipa uploads. For macOS (.pkg) builds, set backend to "altool" or "transporter".');
         }
         const execOptions = {};
         (0, core_1.info)('Installing API private key.');

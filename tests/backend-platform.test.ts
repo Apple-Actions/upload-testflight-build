@@ -114,4 +114,20 @@ describe('backend platform guard', () => {
     )
     expect(transporterUploadMock).not.toHaveBeenCalled()
   })
+
+  it('rejects appstoreApi for macos app-type', async () => {
+    getInputMock.mockImplementation((name: string) => {
+      if (name === 'backend') return 'appstore-api'
+      if (name === 'app-type') return 'macos'
+      return commonInput(name)
+    })
+
+    await import('../src/main')
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(setFailedMock).toHaveBeenCalledWith(
+      expect.stringContaining('only supports .ipa uploads')
+    )
+    expect(appstoreUploadMock).not.toHaveBeenCalled()
+  })
 })
