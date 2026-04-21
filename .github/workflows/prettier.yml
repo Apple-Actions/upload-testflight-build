@@ -17,13 +17,13 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.2
 
       - name: Enable corepack (workaround)
         run: corepack enable
 
       - name: Setup Node
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v6.2.0
         with:
           node-version-file: package.json
           cache: yarn
