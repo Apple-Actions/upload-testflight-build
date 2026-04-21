@@ -823,7 +823,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/adm-zip@npm:^0.5.7":
+"@types/adm-zip@npm:~0.5.0":
   version: 0.5.7
   resolution: "@types/adm-zip@npm:0.5.7"
   dependencies:
@@ -870,16 +870,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*":
-  version: 25.0.2
-  resolution: "@types/node@npm:25.0.2"
-  dependencies:
-    undici-types: "npm:~7.16.0"
-  checksum: 10c0/12c4044bf2e46ba3d313ddf6256ee3c88e336a62d129fe788eeab8ff2631b3df51eb31ade4cdc04552fbe51e285f0663c49b60c78acd31da2b9f2c86a84347e3
-  languageName: node
-  linkType: hard
-
-"@types/node@npm:~24.10.0":
+"@types/node@npm:*, @types/node@npm:~24.10.0":
   version: 24.10.1
   resolution: "@types/node@npm:24.10.1"
   dependencies:
@@ -888,7 +879,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/plist@npm:^3.0.5":
+"@types/plist@npm:~3.0.0":
   version: 3.0.5
   resolution: "@types/plist@npm:3.0.5"
   dependencies:
@@ -1157,7 +1148,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"adm-zip@npm:~0.5.12":
+"adm-zip@npm:~0.5.0":
   version: 0.5.16
   resolution: "adm-zip@npm:0.5.16"
   checksum: 10c0/6f10119d4570c7ba76dcf428abb8d3f69e63f92e51f700a542b43d4c0130373dd2ddfc8f85059f12d4a843703a90c3970cfd17876844b4f3f48bf042bfa6b49f
@@ -1367,7 +1358,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bplist-parser@npm:~0.3.1":
+"bplist-parser@npm:~0.3.0":
   version: 0.3.2
   resolution: "bplist-parser@npm:0.3.2"
   dependencies:
@@ -4487,12 +4478,12 @@ __metadata:
     "@actions/core": "npm:~1.11.0"
     "@actions/exec": "npm:~1.1.0"
     "@actions/io": "npm:~2.0.0"
-    "@types/adm-zip": "npm:^0.5.7"
+    "@types/adm-zip": "npm:~0.5.0"
     "@types/node": "npm:~24.10.0"
-    "@types/plist": "npm:^3.0.5"
+    "@types/plist": "npm:~3.0.0"
     "@vercel/ncc": "npm:~0.38.0"
-    adm-zip: "npm:~0.5.12"
-    bplist-parser: "npm:~0.3.1"
+    adm-zip: "npm:~0.5.0"
+    bplist-parser: "npm:~0.3.0"
     eslint: "npm:~9.39.0"
     eslint-plugin-github: "npm:~6.0.0"
     knip: "npm:~5.70.0"
