@@ -15,14 +15,34 @@
 
 ```yaml
 - name: 'Upload app to TestFlight'
-  uses: apple-actions/upload-testflight-build@v3
+  uses: apple-actions/upload-testflight-build@v4
   with: 
     app-path: 'path/to/application.ipa' 
     issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
     api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
     release-notes: ${{ steps.generate_notes.outputs.whats_new }} # optional
+    uses-non-exempt-encryption: 'false' # optional: "true" or "false" maps directly to App Store Connect usesNonExemptEncryption
+    wait-for-processing: 'true' # optional: set to "false" to skip waiting (metadata updates will be skipped)
+    backend: AppStoreAPI # optional: AppStoreAPI | transporter | altool (default: AppStoreAPI; case insensitive)
 ```
+
+> [!IMPORTANT]
+> `transporter` backend requires Transporter to be installed on the runner and the action now calls the installed binary directly (no `xcrun` shim).
+> The GitHub hosted runners (Xcode 14+) do not have Transporter installed by default.
+> You can install it in your workflow before this action runs:
+>
+> ```yaml
+> - name: Install Transporter
+>   run: |
+>     url="https://itunesconnect.apple.com/WebObjects/iTunesConnect.woa/ra/resources/download/public/Transporter__OSX/bin/"
+>     curl -fsSL "$url" -o "/tmp/itmstransporter.pkg"
+>     sudo installer -pkg "/tmp/itmstransporter.pkg" -target /
+>     /usr/local/itms/bin/iTMSTransporter -help
+> ```
+>
+> Alternatively, use a self-hosted runner that already has Transporter installed at `/usr/local/itms/bin/iTMSTransporter`.
+
 
 ## Additional Arguments
 

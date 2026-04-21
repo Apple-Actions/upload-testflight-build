@@ -3,11 +3,8 @@ import type {ExecOptions} from '@actions/exec/lib/interfaces'
 import {exec} from '@actions/exec'
 import {mkdirP, rmRF} from '@actions/io'
 import {writeFileSync} from 'fs'
-import {
-  uploadApp,
-  installPrivateKey,
-  deleteAllPrivateKeys
-} from '../src/transporter'
+import {uploadApp} from '../src/backends/transporter'
+import {installPrivateKey, deleteAllPrivateKeys} from '../src/utils/keys'
 
 vi.mock('@actions/exec', () => ({
   exec: vi.fn().mockResolvedValue(0)
@@ -36,12 +33,11 @@ describe('transporter utilities', () => {
   })
 
   it('invokes iTMSTransporter with platform when provided', async () => {
-    await uploadApp('path/to/app.ipa', 'ios', 'KEY123', 'ISSUER456')
+    await uploadApp('path/to/app.ipa', 'ios', 'KEY123', 'ISSUER456', undefined)
 
     expect(execMock).toHaveBeenCalledWith(
-      'xcrun',
+      '/usr/local/itms/bin/iTMSTransporter',
       [
-        'iTMSTransporter',
         '-m',
         'upload',
         '-assetFile',
@@ -60,7 +56,7 @@ describe('transporter utilities', () => {
   })
 
   it('omits app platform argument when not provided', async () => {
-    await uploadApp('path/to/app.ipa', '', 'KEY123', 'ISSUER456')
+    await uploadApp('path/to/app.ipa', '', 'KEY123', 'ISSUER456', undefined)
 
     expect(execMock).toHaveBeenCalledTimes(1)
     const [, args] = execMock.mock.calls[0]
@@ -70,12 +66,53 @@ describe('transporter utilities', () => {
   it('forwards exec options when supplied', async () => {
     const options: ExecOptions = {cwd: '/tmp'}
 
-    await uploadApp('path/to/app.ipa', '', 'KEY123', 'ISSUER456', options)
+    await uploadApp(
+      'path/to/app.ipa',
+      '',
+      'KEY123',
+      'ISSUER456',
+      undefined,
+      options
+    )
 
     expect(execMock).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(Array),
       options
+    )
+  })
+
+  it('uses custom transporter executable path when provided', async () => {
+    await uploadApp(
+      'path/to/app.ipa',
+      'ios',
+      'KEY123',
+      'ISSUER456',
+      '/custom/iTMSTransporter',
+      undefined
+    )
+
+    expect(execMock).toHaveBeenCalledWith(
+      '/custom/iTMSTransporter',
+      expect.any(Array),
+      undefined
+    )
+  })
+
+  it('falls back to default path when custom path is blank', async () => {
+    await uploadApp(
+      'path/to/app.ipa',
+      'ios',
+      'KEY123',
+      'ISSUER456',
+      '   ',
+      undefined
+    )
+
+    expect(execMock).toHaveBeenCalledWith(
+      '/usr/local/itms/bin/iTMSTransporter',
+      expect.any(Array),
+      undefined
     )
   })
 

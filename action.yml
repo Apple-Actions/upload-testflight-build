@@ -21,9 +21,22 @@ inputs:
   release-notes:
     description: 'Optional TestFlight release note content to attach to the uploaded build'
     required: false
+  backend:
+    description: 'Upload backend to use (appstore-api | transporter | altool)'
+    required: false
+    default: 'appstore-api'
+  transporter-executable-path:
+    description: 'Optional path to the iTMSTransporter executable (defaults to /usr/local/itms/bin/iTMSTransporter)'
+    required: false
+  uses-non-exempt-encryption:
+    description: 'Boolean string. Set to "true" if your build uses non-exempt encryption; "false" otherwise.'
+    required: false
+  wait-for-processing:
+    description: 'Boolean string. Set to "false" to skip waiting for App Store processing (metadata updates will be skipped when waiting is disabled).'
+    required: false
 outputs:
-  transporter-response:
-    description: 'output from transporter'
+  upload-backend:
+    description: 'The backend that performed the upload'
 runs:
   using: 'node24'
   main: 'dist/index.js'
