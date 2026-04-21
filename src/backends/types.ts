@@ -1,4 +1,4 @@
-import {ExecOptions} from '@actions/exec'
+import type {ExecOptions} from '@actions/exec'
 
 export type UploadBackend = 'appstoreApi' | 'transporter' | 'altool'
 

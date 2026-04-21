@@ -1,5 +1,4 @@
-import {exec} from '@actions/exec'
-import {ExecOptions} from '@actions/exec/lib/interfaces'
+import {exec, type ExecOptions} from '@actions/exec'
 import {UploadParams, UploadResult, Uploader} from './types'
 
 export async function uploadApp(

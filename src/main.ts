@@ -7,8 +7,7 @@ import {transporter} from './backends/transporter'
 import {altool} from './backends/altool'
 import {appstoreApi} from './backends/appstore-api'
 import {normalizeBackend} from './utils/normalize-backend'
-
-import {ExecOptions} from '@actions/exec/lib/interfaces'
+import type {ExecOptions} from '@actions/exec'
 
 async function run(): Promise<void> {
   try {

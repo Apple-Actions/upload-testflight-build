@@ -1,4 +1,4 @@
-import {exec, ExecOptions} from '@actions/exec'
+import {exec, type ExecOptions} from '@actions/exec'
 import {UploadParams, UploadResult, Uploader} from './types'
 
 export const altool: Uploader = {
