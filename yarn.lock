@@ -1151,10 +1151,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@xmldom/xmldom@npm:^0.8.8":
-  version: 0.8.13
-  resolution: "@xmldom/xmldom@npm:0.8.13"
-  checksum: 10c0/06405ee6fffba631abf715a305ace338420ebcea8baf1317f19f2752f5c505952b7df45159908e7be8451a42faa54326b780616ab4d08242b20477b2973da24b
+"@xmldom/xmldom@npm:^0.9.10":
+  version: 0.9.10
+  resolution: "@xmldom/xmldom@npm:0.9.10"
+  checksum: 10c0/38a9c9b95450d7fccebc61371c8e0b90ceaae992886484108333d29ccbd2640e3555b6af012f15ce1beb5067aeb40486659b6183fad38af179e82d28028bfc5d
   languageName: node
   linkType: hard
 
@@ -1367,13 +1367,6 @@ __metadata:
   version: 4.0.4
   resolution: "balanced-match@npm:4.0.4"
   checksum: 10c0/07e86102a3eb2ee2a6a1a89164f29d0dbaebd28f2ca3f5ca786f36b8b23d9e417eb3be45a4acf754f837be5ac0a2317de90d3fcb7f4f4dc95720a1f36b26a17b
-  languageName: node
-  linkType: hard
-
-"base64-js@npm:^1.5.1":
-  version: 1.5.1
-  resolution: "base64-js@npm:1.5.1"
-  checksum: 10c0/f23823513b63173a001030fae4f2dabe283b99a9d324ade3ad3d148e218134676f1ee8568c877cd79ec1c53158dcf2d2ba527a97c606618928ba99dd930102bf
   languageName: node
   linkType: hard
 
@@ -3604,14 +3597,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"plist@npm:~3.1.0":
-  version: 3.1.0
-  resolution: "plist@npm:3.1.0"
+"plist@npm:~4.0.0":
+  version: 4.0.0
+  resolution: "plist@npm:4.0.0"
   dependencies:
-    "@xmldom/xmldom": "npm:^0.8.8"
-    base64-js: "npm:^1.5.1"
+    "@xmldom/xmldom": "npm:^0.9.10"
     xmlbuilder: "npm:^15.1.1"
-  checksum: 10c0/db19ba50faafc4103df8e79bcd6b08004a56db2a9dd30b3e5c8b0ef30398ef44344a674e594d012c8fc39e539a2b72cb58c60a76b4b4401cbbc7c8f6b028d93d
+  checksum: 10c0/e2d97e11407e873e39764c7397207790dc31b2ddf8a7685bf602ce828de986ee7cce334deb3a630b65e5e99c4be95ea2f14f8c6bb44a900d11edc7f488ab16a8
   languageName: node
   linkType: hard
 
@@ -4365,7 +4357,7 @@ __metadata:
     eslint: "npm:~9.39.0"
     eslint-plugin-github: "npm:~6.0.0"
     knip: "npm:~6.6.0"
-    plist: "npm:~3.1.0"
+    plist: "npm:~4.0.0"
     prettier: "npm:~3.8.0"
     typescript: "npm:~6.0.0"
     vitest: "npm:~4.1.0"
