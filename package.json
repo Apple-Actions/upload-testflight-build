@@ -43,7 +43,7 @@
     "esbuild": "~0.28.0",
     "eslint": "~9.39.0",
     "eslint-plugin-github": "~6.0.0",
-    "knip": "~6.6.0",
+    "knip": "~6.9.0",
     "prettier": "~3.8.0",
     "typescript": "~6.0.0",
     "vitest": "~4.1.0"
