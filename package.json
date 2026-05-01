@@ -29,7 +29,7 @@
   "author": "Itty Bitty Apps Pty Ltd",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "~3.0.0",
+    "@actions/core": "~3.0.1",
     "@actions/exec": "~3.0.0",
     "@actions/io": "~3.0.0",
     "adm-zip": "~0.5.0",
