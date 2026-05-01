@@ -34,7 +34,7 @@
     "@actions/io": "~3.0.0",
     "adm-zip": "~0.5.0",
     "bplist-parser": "~0.3.0",
-    "plist": "~3.1.0"
+    "plist": "~4.0.0"
   },
   "devDependencies": {
     "@types/adm-zip": "~0.5.0",
