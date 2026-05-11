@@ -34650,8 +34650,322 @@ function generateJwt(issuerId, apiKeyId, apiPrivateKey, ttlSeconds = 600) {
 // src/utils/appMetadata.ts
 var import_adm_zip = __toESM(require_adm_zip());
 
-// node_modules/plist/lib/parse.js
+// node_modules/plist/dist/parse.js
 var import_xmldom = __toESM(require_lib(), 1);
+
+// node_modules/plist/dist/parse-binary.js
+var EPOCH_2001 = 9783072e5;
+function readSizedInt(view, offset, size) {
+  switch (size) {
+    case 1:
+      return view.getUint8(offset);
+    case 2:
+      return view.getUint16(offset);
+    case 4:
+      return view.getUint32(offset);
+    case 8: {
+      const hi = view.getUint32(offset);
+      const lo = view.getUint32(offset + 4);
+      return hi * 4294967296 + lo;
+    }
+    default:
+      throw new Error(`Unsupported int size: ${size}`);
+  }
+}
+function parseBinary(data) {
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const len = data.byteLength;
+  const header = String.fromCharCode(...data.subarray(0, 8));
+  if (header !== "bplist00") {
+    throw new Error("Invalid binary plist: bad magic");
+  }
+  const trailerOffset = len - 32;
+  const offsetTableOffsetSize = view.getUint8(trailerOffset + 6);
+  const objectRefSize = view.getUint8(trailerOffset + 7);
+  const numObjects = readSizedInt(view, trailerOffset + 8, 8);
+  const topObject = readSizedInt(view, trailerOffset + 16, 8);
+  const offsetTableOffset = readSizedInt(view, trailerOffset + 24, 8);
+  const offsets = [];
+  for (let i = 0; i < numObjects; i++) {
+    offsets.push(readSizedInt(view, offsetTableOffset + i * offsetTableOffsetSize, offsetTableOffsetSize));
+  }
+  function parseObject(index) {
+    let offset = offsets[index];
+    const marker = view.getUint8(offset);
+    const type = marker >> 4;
+    let size = marker & 15;
+    offset++;
+    if (type !== 0 && type !== 8 && size === 15) {
+      const extMarker = view.getUint8(offset);
+      offset++;
+      const extSize = 1 << (extMarker & 15);
+      size = readSizedInt(view, offset, extSize);
+      offset += extSize;
+    }
+    switch (type) {
+      case 0:
+        if (marker === 0)
+          return null;
+        if (marker === 8)
+          return false;
+        if (marker === 9)
+          return true;
+        throw new Error(`Unknown singleton: 0x${marker.toString(16)}`);
+      case 1: {
+        const byteCount = 1 << size;
+        if (byteCount <= 4) {
+          return readSizedInt(view, offset, byteCount);
+        }
+        const hi = view.getInt32(offset);
+        const lo = view.getUint32(offset + 4);
+        return hi * 4294967296 + lo;
+      }
+      case 2: {
+        const byteCount = 1 << size;
+        if (byteCount === 4)
+          return view.getFloat32(offset);
+        if (byteCount === 8)
+          return view.getFloat64(offset);
+        throw new Error(`Unsupported real size: ${byteCount}`);
+      }
+      case 3: {
+        const timestamp = view.getFloat64(offset);
+        return new Date(timestamp * 1e3 + EPOCH_2001);
+      }
+      case 4: {
+        return new Uint8Array(data.buffer, data.byteOffset + offset, size);
+      }
+      case 5: {
+        let s = "";
+        for (let i = 0; i < size; i++) {
+          s += String.fromCharCode(view.getUint8(offset + i));
+        }
+        return s;
+      }
+      case 6: {
+        let s = "";
+        for (let i = 0; i < size; i++) {
+          s += String.fromCharCode(view.getUint16(offset + i * 2));
+        }
+        return s;
+      }
+      case 8: {
+        const byteCount = size + 1;
+        return { UID: readSizedInt(view, offset, byteCount) };
+      }
+      case 10: {
+        const arr = [];
+        for (let i = 0; i < size; i++) {
+          const ref = readSizedInt(view, offset + i * objectRefSize, objectRefSize);
+          arr.push(parseObject(ref));
+        }
+        return arr;
+      }
+      case 13: {
+        const dict = {};
+        for (let i = 0; i < size; i++) {
+          const keyRef = readSizedInt(view, offset + i * objectRefSize, objectRefSize);
+          const valRef = readSizedInt(view, offset + (size + i) * objectRefSize, objectRefSize);
+          const key = parseObject(keyRef);
+          dict[key] = parseObject(valRef);
+        }
+        return dict;
+      }
+      default:
+        throw new Error(`Unknown object type: 0x${type.toString(16)}`);
+    }
+  }
+  return parseObject(topObject);
+}
+
+// node_modules/plist/dist/parse-openstep.js
+var OpenStepParser = class {
+  input;
+  pos;
+  constructor(input) {
+    this.input = input;
+    this.pos = 0;
+  }
+  skipWhitespaceAndComments() {
+    while (this.pos < this.input.length) {
+      const ch = this.input[this.pos];
+      if (/\s/.test(ch)) {
+        this.pos++;
+        continue;
+      }
+      if (ch === "/" && this.pos + 1 < this.input.length && this.input[this.pos + 1] === "*") {
+        this.pos += 2;
+        const end = this.input.indexOf("*/", this.pos);
+        if (end === -1)
+          throw new Error("Unterminated block comment");
+        this.pos = end + 2;
+        continue;
+      }
+      if (ch === "/" && this.pos + 1 < this.input.length && this.input[this.pos + 1] === "/") {
+        this.pos += 2;
+        const end = this.input.indexOf("\n", this.pos);
+        this.pos = end === -1 ? this.input.length : end + 1;
+        continue;
+      }
+      break;
+    }
+  }
+  parseValue() {
+    this.skipWhitespaceAndComments();
+    if (this.pos >= this.input.length) {
+      throw new Error("Unexpected end of input");
+    }
+    const ch = this.input[this.pos];
+    if (ch === "{")
+      return this.parseDict();
+    if (ch === "(")
+      return this.parseArray();
+    if (ch === "<")
+      return this.parseData();
+    if (ch === '"')
+      return this.parseQuotedString();
+    return this.parseUnquotedString();
+  }
+  parseDict() {
+    this.pos++;
+    const obj = {};
+    while (true) {
+      this.skipWhitespaceAndComments();
+      if (this.pos >= this.input.length)
+        throw new Error("Unterminated dictionary");
+      if (this.input[this.pos] === "}") {
+        this.pos++;
+        return obj;
+      }
+      const key = this.parseValue();
+      this.skipWhitespaceAndComments();
+      if (this.pos >= this.input.length || this.input[this.pos] !== "=")
+        throw new Error(`Expected '=' after key "${key}" at position ${this.pos}`);
+      this.pos++;
+      const value = this.parseValue();
+      obj[key] = value;
+      this.skipWhitespaceAndComments();
+      if (this.pos < this.input.length && this.input[this.pos] === ";") {
+        this.pos++;
+      }
+    }
+  }
+  parseArray() {
+    this.pos++;
+    const arr = [];
+    this.skipWhitespaceAndComments();
+    if (this.pos < this.input.length && this.input[this.pos] === ")") {
+      this.pos++;
+      return arr;
+    }
+    while (true) {
+      arr.push(this.parseValue());
+      this.skipWhitespaceAndComments();
+      if (this.pos >= this.input.length)
+        throw new Error("Unterminated array");
+      if (this.input[this.pos] === ")") {
+        this.pos++;
+        return arr;
+      }
+      if (this.input[this.pos] === ",") {
+        this.pos++;
+        this.skipWhitespaceAndComments();
+        if (this.pos < this.input.length && this.input[this.pos] === ")") {
+          this.pos++;
+          return arr;
+        }
+      } else {
+        throw new Error(`Expected ',' or ')' in array at position ${this.pos}`);
+      }
+    }
+  }
+  parseData() {
+    this.pos++;
+    let hex = "";
+    while (this.pos < this.input.length) {
+      const ch = this.input[this.pos];
+      if (ch === ">") {
+        this.pos++;
+        const clean = hex.replace(/\s+/g, "");
+        const bytes = new Uint8Array(clean.length / 2);
+        for (let i = 0; i < clean.length; i += 2) {
+          bytes[i / 2] = parseInt(clean.substring(i, i + 2), 16);
+        }
+        return bytes;
+      }
+      hex += ch;
+      this.pos++;
+    }
+    throw new Error("Unterminated data");
+  }
+  parseQuotedString() {
+    this.pos++;
+    let result = "";
+    while (this.pos < this.input.length) {
+      const ch = this.input[this.pos];
+      if (ch === "\\") {
+        this.pos++;
+        if (this.pos >= this.input.length)
+          throw new Error("Unterminated string escape");
+        const esc = this.input[this.pos];
+        switch (esc) {
+          case '"':
+            result += '"';
+            break;
+          case "\\":
+            result += "\\";
+            break;
+          case "n":
+            result += "\n";
+            break;
+          case "t":
+            result += "	";
+            break;
+          case "r":
+            result += "\r";
+            break;
+          case "0":
+            result += "\0";
+            break;
+          default:
+            result += esc;
+            break;
+        }
+        this.pos++;
+        continue;
+      }
+      if (ch === '"') {
+        this.pos++;
+        return result;
+      }
+      result += ch;
+      this.pos++;
+    }
+    throw new Error("Unterminated string");
+  }
+  parseUnquotedString() {
+    const start = this.pos;
+    while (this.pos < this.input.length) {
+      const ch = this.input[this.pos];
+      if (/[a-zA-Z0-9._\/$:-]/.test(ch)) {
+        this.pos++;
+      } else {
+        break;
+      }
+    }
+    if (this.pos === start) {
+      throw new Error(`Unexpected character '${this.input[this.pos]}' at position ${this.pos}`);
+    }
+    return this.input.substring(start, this.pos);
+  }
+};
+function parseOpenStep(input) {
+  const parser = new OpenStepParser(input);
+  const value = parser.parseValue();
+  return value;
+}
+
+// node_modules/plist/dist/parse.js
 function base64ToUint8Array(base64) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -34679,17 +34993,33 @@ function invariant(test, message) {
   }
 }
 function parse(xml) {
+  if (xml instanceof ArrayBuffer) {
+    return parseBinary(new Uint8Array(xml));
+  }
+  if (xml instanceof Uint8Array) {
+    return parseBinary(xml);
+  }
+  if (typeof xml === "string" && xml.startsWith("bplist")) {
+    const encoder = new TextEncoder();
+    return parseBinary(encoder.encode(xml));
+  }
+  if (typeof xml === "string") {
+    const trimmed = xml.trimStart();
+    if ((trimmed[0] === "{" || trimmed[0] === "(") && !trimmed.startsWith("<?xml") && !trimmed.startsWith("<!DOCTYPE") && !trimmed.startsWith("<plist")) {
+      return parseOpenStep(xml);
+    }
+  }
   const doc = new import_xmldom.DOMParser().parseFromString(xml, "text/xml");
-  invariant(
-    doc.documentElement.nodeName === "plist",
-    "malformed document. First element should be <plist>"
-  );
-  let plist = parsePlistXML(doc.documentElement);
-  if (plist.length == 1) plist = plist[0];
+  const root = doc.documentElement;
+  invariant(root !== null && root.nodeName === "plist", "malformed document. First element should be <plist>");
+  let plist = parsePlistXML(root);
+  if (Array.isArray(plist) && plist.length == 1)
+    plist = plist[0];
   return plist;
 }
 function parsePlistXML(node) {
-  if (!node) return null;
+  if (!node)
+    return null;
   if (node.nodeName === "plist") {
     const new_arr = [];
     if (isEmptyNode(node)) {
@@ -34709,18 +35039,13 @@ function parsePlistXML(node) {
       return new_obj;
     }
     for (let i = 0; i < node.childNodes.length; i++) {
-      if (shouldIgnoreNode(node.childNodes[i])) continue;
+      if (shouldIgnoreNode(node.childNodes[i]))
+        continue;
       if (counter % 2 === 0) {
-        invariant(
-          node.childNodes[i].nodeName === "key",
-          "Missing key while parsing <dict/>."
-        );
+        invariant(node.childNodes[i].nodeName === "key", "Missing key while parsing <dict/>.");
         key = parsePlistXML(node.childNodes[i]);
       } else {
-        invariant(
-          node.childNodes[i].nodeName !== "key",
-          'Unexpected key "' + parsePlistXML(node.childNodes[i]) + '" while parsing <dict/>.'
-        );
+        invariant(node.childNodes[i].nodeName !== "key", "Unexpected <key> while parsing <dict/>. Keys and values must alternate.");
         new_obj[key] = parsePlistXML(node.childNodes[i]);
       }
       counter += 1;
@@ -34737,7 +35062,8 @@ function parsePlistXML(node) {
     for (let i = 0; i < node.childNodes.length; i++) {
       if (!shouldIgnoreNode(node.childNodes[i])) {
         const res = parsePlistXML(node.childNodes[i]);
-        if (null != res) new_arr.push(res);
+        if (null != res)
+          new_arr.push(res);
       }
     }
     return new_arr;
@@ -34746,10 +35072,7 @@ function parsePlistXML(node) {
     if (isEmptyNode(node)) {
       return "";
     }
-    invariant(
-      node.childNodes[0].nodeValue !== "__proto__",
-      "__proto__ keys can lead to prototype pollution. More details on CVE-2022-22912"
-    );
+    invariant(node.childNodes[0].nodeValue !== "__proto__", "__proto__ keys can lead to prototype pollution. More details on CVE-2022-22912");
     return node.childNodes[0].nodeValue;
   } else if (node.nodeName === "string") {
     let res = "";
@@ -34798,9 +35121,10 @@ function parsePlistXML(node) {
   } else {
     throw new Error("Invalid PLIST tag " + node.nodeName);
   }
+  return null;
 }
 
-// node_modules/plist/lib/build.js
+// node_modules/plist/dist/build.js
 var import_xmlbuilder = __toESM(require_lib2(), 1);
 
 // src/utils/appMetadata.ts
