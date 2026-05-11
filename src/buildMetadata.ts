@@ -80,7 +80,7 @@ async function lookupLocalizationId(
   buildId: string,
   token: string
 ): Promise<string> {
-  const MAX_ATTEMPTS = 20
+  const MAX_ATTEMPTS = 50
   const RETRY_DELAY_MS = 30000
 
   const result = await pollUntil(
