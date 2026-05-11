@@ -14,7 +14,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "type:check": "tsc --noEmit",
-    "all": "yarn format && yarn knip && yarn lint && yarn type:check && yarn build"
+    "all": "yarn format && yarn knip && yarn lint && yarn type:check && yarn test && yarn build"
   },
   "repository": {
     "type": "git",

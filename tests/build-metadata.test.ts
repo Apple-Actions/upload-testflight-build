@@ -37,17 +37,16 @@ describe('release notes submission', () => {
       sign: vi.fn(() => Buffer.from('signature'))
     }))
 
-    const plistXml = `
-      <?xml version="1.0" encoding="UTF-8"?>
-      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-      <plist version="1.0">
-        <dict>
-          <key>CFBundleIdentifier</key><string>com.example.app</string>
-          <key>CFBundleVersion</key><string>123</string>
-          <key>CFBundleShortVersionString</key><string>1.2.3</string>
-        </dict>
-      </plist>
-    `
+    const plistXml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>CFBundleIdentifier</key><string>com.example.app</string>
+    <key>CFBundleVersion</key><string>123</string>
+    <key>CFBundleShortVersionString</key><string>1.2.3</string>
+  </dict>
+</plist>
+`
     admZipMock.mockImplementation(function FakeZip() {
       return {
         getEntries: () => [
