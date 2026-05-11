@@ -7,7 +7,7 @@
     "node": "24"
   },
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/index.js --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node24 --format=esm --minify --alias:undici=./scripts/undici-stub.mjs --outfile=dist/index.js --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
     "knip": "knip",
@@ -47,5 +47,8 @@
     "typescript": "~6.0.0",
     "vitest": "~4.1.0"
   },
-  "packageManager": "yarn@4.14.1"
+  "packageManager": "yarn@4.14.1",
+  "knip": {
+    "ignore": ["scripts/undici-stub.mjs"]
+  }
 }
