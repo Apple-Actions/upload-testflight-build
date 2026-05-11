@@ -1,5 +1,5 @@
 import AdmZip from 'adm-zip'
-import plist from 'plist'
+import {parse as parsePlist} from 'plist'
 import bplist from 'bplist-parser'
 
 type AppMetadata = {
@@ -46,5 +46,5 @@ function parsePlistBuffer(buffer: Buffer): Record<string, string> {
     return (parsed[0] ?? {}) as Record<string, string>
   }
 
-  return plist.parse(buffer.toString()) as Record<string, string>
+  return parsePlist(buffer.toString()) as Record<string, string>
 }

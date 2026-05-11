@@ -14683,7 +14683,7 @@ var require_util4 = __commonJS({
     var { serializeAMimeType, parseMIMEType } = require_data_url();
     var { types } = __require("node:util");
     var { StringDecoder } = __require("string_decoder");
-    var { btoa } = __require("node:buffer");
+    var { btoa: btoa2 } = __require("node:buffer");
     var staticPropertyDescriptors = {
       enumerable: true,
       writable: false,
@@ -14775,9 +14775,9 @@ var require_util4 = __commonJS({
           dataURL += ";base64,";
           const decoder = new StringDecoder("latin1");
           for (const chunk of bytes) {
-            dataURL += btoa(decoder.write(chunk));
+            dataURL += btoa2(decoder.write(chunk));
           }
-          dataURL += btoa(decoder.end());
+          dataURL += btoa2(decoder.end());
           return dataURL;
         }
         case "Text": {
@@ -21308,7 +21308,7 @@ var require_conventions = __commonJS({
         return ac.find.call(list, predicate);
       }
       for (var i = 0; i < list.length; i++) {
-        if (Object.prototype.hasOwnProperty.call(list, i)) {
+        if (hasOwn(list, i)) {
           var item = list[i];
           if (predicate.call(void 0, item, i, list)) {
             return item;
@@ -21320,53 +21320,115 @@ var require_conventions = __commonJS({
       if (oc === void 0) {
         oc = Object;
       }
+      if (oc && typeof oc.getOwnPropertyDescriptors === "function") {
+        object = oc.create(null, oc.getOwnPropertyDescriptors(object));
+      }
       return oc && typeof oc.freeze === "function" ? oc.freeze(object) : object;
+    }
+    function hasOwn(object, key) {
+      return Object.prototype.hasOwnProperty.call(object, key);
     }
     function assign(target, source) {
       if (target === null || typeof target !== "object") {
         throw new TypeError("target is not an object");
       }
       for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
+        if (hasOwn(source, key)) {
           target[key] = source[key];
         }
       }
       return target;
     }
+    var HTML_BOOLEAN_ATTRIBUTES = freeze({
+      allowfullscreen: true,
+      async: true,
+      autofocus: true,
+      autoplay: true,
+      checked: true,
+      controls: true,
+      default: true,
+      defer: true,
+      disabled: true,
+      formnovalidate: true,
+      hidden: true,
+      ismap: true,
+      itemscope: true,
+      loop: true,
+      multiple: true,
+      muted: true,
+      nomodule: true,
+      novalidate: true,
+      open: true,
+      playsinline: true,
+      readonly: true,
+      required: true,
+      reversed: true,
+      selected: true
+    });
+    function isHTMLBooleanAttribute(name) {
+      return hasOwn(HTML_BOOLEAN_ATTRIBUTES, name.toLowerCase());
+    }
+    var HTML_VOID_ELEMENTS = freeze({
+      area: true,
+      base: true,
+      br: true,
+      col: true,
+      embed: true,
+      hr: true,
+      img: true,
+      input: true,
+      link: true,
+      meta: true,
+      param: true,
+      source: true,
+      track: true,
+      wbr: true
+    });
+    function isHTMLVoidElement(tagName) {
+      return hasOwn(HTML_VOID_ELEMENTS, tagName.toLowerCase());
+    }
+    var HTML_RAW_TEXT_ELEMENTS = freeze({
+      script: false,
+      style: false,
+      textarea: true,
+      title: true
+    });
+    function isHTMLRawTextElement(tagName) {
+      var key = tagName.toLowerCase();
+      return hasOwn(HTML_RAW_TEXT_ELEMENTS, key) && !HTML_RAW_TEXT_ELEMENTS[key];
+    }
+    function isHTMLEscapableRawTextElement(tagName) {
+      var key = tagName.toLowerCase();
+      return hasOwn(HTML_RAW_TEXT_ELEMENTS, key) && HTML_RAW_TEXT_ELEMENTS[key];
+    }
+    function isHTMLMimeType(mimeType) {
+      return mimeType === MIME_TYPE.HTML;
+    }
+    function hasDefaultHTMLNamespace(mimeType) {
+      return isHTMLMimeType(mimeType) || mimeType === MIME_TYPE.XML_XHTML_APPLICATION;
+    }
     var MIME_TYPE = freeze({
       /**
        * `text/html`, the only mime type that triggers treating an XML document as HTML.
        *
-       * @see DOMParser.SupportedType.isHTML
        * @see https://www.iana.org/assignments/media-types/text/html IANA MimeType registration
        * @see https://en.wikipedia.org/wiki/HTML Wikipedia
        * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString MDN
-       * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring WHATWG HTML Spec
+       * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring
+       *      WHATWG HTML Spec
        */
       HTML: "text/html",
       /**
-       * Helper method to check a mime type if it indicates an HTML document
-       *
-       * @param {string} [value]
-       * @returns {boolean}
-       *
-       * @see https://www.iana.org/assignments/media-types/text/html IANA MimeType registration
-       * @see https://en.wikipedia.org/wiki/HTML Wikipedia
-       * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString MDN
-       * @see https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-domparser-parsefromstring 	 */
-      isHTML: function(value) {
-        return value === MIME_TYPE.HTML;
-      },
-      /**
        * `application/xml`, the standard mime type for XML documents.
        *
-       * @see https://www.iana.org/assignments/media-types/application/xml IANA MimeType registration
+       * @see https://www.iana.org/assignments/media-types/application/xml IANA MimeType
+       *      registration
        * @see https://tools.ietf.org/html/rfc7303#section-9.1 RFC 7303
        * @see https://en.wikipedia.org/wiki/XML_and_MIME Wikipedia
        */
       XML_APPLICATION: "application/xml",
       /**
-       * `text/html`, an alias for `application/xml`.
+       * `text/xml`, an alias for `application/xml`.
        *
        * @see https://tools.ietf.org/html/rfc7303#section-9.2 RFC 7303
        * @see https://www.iana.org/assignments/media-types/text/xml IANA MimeType registration
@@ -21377,7 +21439,8 @@ var require_conventions = __commonJS({
        * `application/xhtml+xml`, indicates an XML document that has the default HTML namespace,
        * but is parsed as an XML document.
        *
-       * @see https://www.iana.org/assignments/media-types/application/xhtml+xml IANA MimeType registration
+       * @see https://www.iana.org/assignments/media-types/application/xhtml+xml IANA MimeType
+       *      registration
        * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocument WHATWG DOM Spec
        * @see https://en.wikipedia.org/wiki/XHTML Wikipedia
        */
@@ -21391,6 +21454,12 @@ var require_conventions = __commonJS({
        */
       XML_SVG_IMAGE: "image/svg+xml"
     });
+    var _MIME_TYPES = Object.keys(MIME_TYPE).map(function(key) {
+      return MIME_TYPE[key];
+    });
+    function isValidMimeType(mimeType) {
+      return _MIME_TYPES.indexOf(mimeType) > -1;
+    }
     var NAMESPACE = freeze({
       /**
        * The XHTML namespace.
@@ -21398,16 +21467,6 @@ var require_conventions = __commonJS({
        * @see http://www.w3.org/1999/xhtml
        */
       HTML: "http://www.w3.org/1999/xhtml",
-      /**
-       * Checks if `uri` equals `NAMESPACE.HTML`.
-       *
-       * @param {string} [uri]
-       *
-       * @see NAMESPACE.HTML
-       */
-      isHTML: function(uri) {
-        return uri === NAMESPACE.HTML;
-      },
       /**
        * The SVG namespace.
        *
@@ -21421,7 +21480,7 @@ var require_conventions = __commonJS({
        */
       XML: "http://www.w3.org/XML/1998/namespace",
       /**
-       * The `xmlns:` namespace
+       * The `xmlns:` namespace.
        *
        * @see https://www.w3.org/2000/xmlns/
        */
@@ -21430,17 +21489,406 @@ var require_conventions = __commonJS({
     exports.assign = assign;
     exports.find = find;
     exports.freeze = freeze;
+    exports.HTML_BOOLEAN_ATTRIBUTES = HTML_BOOLEAN_ATTRIBUTES;
+    exports.HTML_RAW_TEXT_ELEMENTS = HTML_RAW_TEXT_ELEMENTS;
+    exports.HTML_VOID_ELEMENTS = HTML_VOID_ELEMENTS;
+    exports.hasDefaultHTMLNamespace = hasDefaultHTMLNamespace;
+    exports.hasOwn = hasOwn;
+    exports.isHTMLBooleanAttribute = isHTMLBooleanAttribute;
+    exports.isHTMLRawTextElement = isHTMLRawTextElement;
+    exports.isHTMLEscapableRawTextElement = isHTMLEscapableRawTextElement;
+    exports.isHTMLMimeType = isHTMLMimeType;
+    exports.isHTMLVoidElement = isHTMLVoidElement;
+    exports.isValidMimeType = isValidMimeType;
     exports.MIME_TYPE = MIME_TYPE;
     exports.NAMESPACE = NAMESPACE;
+  }
+});
+
+// node_modules/@xmldom/xmldom/lib/errors.js
+var require_errors3 = __commonJS({
+  "node_modules/@xmldom/xmldom/lib/errors.js"(exports) {
+    "use strict";
+    var conventions = require_conventions();
+    function extendError(constructor, writableName) {
+      constructor.prototype = Object.create(Error.prototype, {
+        constructor: { value: constructor },
+        name: { value: constructor.name, enumerable: true, writable: writableName }
+      });
+    }
+    var DOMExceptionName = conventions.freeze({
+      /**
+       * the default value as defined by the spec
+       */
+      Error: "Error",
+      /**
+       * @deprecated
+       * Use RangeError instead.
+       */
+      IndexSizeError: "IndexSizeError",
+      /**
+       * @deprecated
+       * Just to match the related static code, not part of the spec.
+       */
+      DomstringSizeError: "DomstringSizeError",
+      HierarchyRequestError: "HierarchyRequestError",
+      WrongDocumentError: "WrongDocumentError",
+      InvalidCharacterError: "InvalidCharacterError",
+      /**
+       * @deprecated
+       * Just to match the related static code, not part of the spec.
+       */
+      NoDataAllowedError: "NoDataAllowedError",
+      NoModificationAllowedError: "NoModificationAllowedError",
+      NotFoundError: "NotFoundError",
+      NotSupportedError: "NotSupportedError",
+      InUseAttributeError: "InUseAttributeError",
+      InvalidStateError: "InvalidStateError",
+      SyntaxError: "SyntaxError",
+      InvalidModificationError: "InvalidModificationError",
+      NamespaceError: "NamespaceError",
+      /**
+       * @deprecated
+       * Use TypeError for invalid arguments,
+       * "NotSupportedError" DOMException for unsupported operations,
+       * and "NotAllowedError" DOMException for denied requests instead.
+       */
+      InvalidAccessError: "InvalidAccessError",
+      /**
+       * @deprecated
+       * Just to match the related static code, not part of the spec.
+       */
+      ValidationError: "ValidationError",
+      /**
+       * @deprecated
+       * Use TypeError instead.
+       */
+      TypeMismatchError: "TypeMismatchError",
+      SecurityError: "SecurityError",
+      NetworkError: "NetworkError",
+      AbortError: "AbortError",
+      /**
+       * @deprecated
+       * Just to match the related static code, not part of the spec.
+       */
+      URLMismatchError: "URLMismatchError",
+      QuotaExceededError: "QuotaExceededError",
+      TimeoutError: "TimeoutError",
+      InvalidNodeTypeError: "InvalidNodeTypeError",
+      DataCloneError: "DataCloneError",
+      EncodingError: "EncodingError",
+      NotReadableError: "NotReadableError",
+      UnknownError: "UnknownError",
+      ConstraintError: "ConstraintError",
+      DataError: "DataError",
+      TransactionInactiveError: "TransactionInactiveError",
+      ReadOnlyError: "ReadOnlyError",
+      VersionError: "VersionError",
+      OperationError: "OperationError",
+      NotAllowedError: "NotAllowedError",
+      OptOutError: "OptOutError"
+    });
+    var DOMExceptionNames = Object.keys(DOMExceptionName);
+    function isValidDomExceptionCode(value) {
+      return typeof value === "number" && value >= 1 && value <= 25;
+    }
+    function endsWithError(value) {
+      return typeof value === "string" && value.substring(value.length - DOMExceptionName.Error.length) === DOMExceptionName.Error;
+    }
+    function DOMException2(messageOrCode, nameOrMessage) {
+      if (isValidDomExceptionCode(messageOrCode)) {
+        this.name = DOMExceptionNames[messageOrCode];
+        this.message = nameOrMessage || "";
+      } else {
+        this.message = messageOrCode;
+        this.name = endsWithError(nameOrMessage) ? nameOrMessage : DOMExceptionName.Error;
+      }
+      if (Error.captureStackTrace) Error.captureStackTrace(this, DOMException2);
+    }
+    extendError(DOMException2, true);
+    Object.defineProperties(DOMException2.prototype, {
+      code: {
+        enumerable: true,
+        get: function() {
+          var code = DOMExceptionNames.indexOf(this.name);
+          if (isValidDomExceptionCode(code)) return code;
+          return 0;
+        }
+      }
+    });
+    var ExceptionCode = {
+      INDEX_SIZE_ERR: 1,
+      DOMSTRING_SIZE_ERR: 2,
+      HIERARCHY_REQUEST_ERR: 3,
+      WRONG_DOCUMENT_ERR: 4,
+      INVALID_CHARACTER_ERR: 5,
+      NO_DATA_ALLOWED_ERR: 6,
+      NO_MODIFICATION_ALLOWED_ERR: 7,
+      NOT_FOUND_ERR: 8,
+      NOT_SUPPORTED_ERR: 9,
+      INUSE_ATTRIBUTE_ERR: 10,
+      INVALID_STATE_ERR: 11,
+      SYNTAX_ERR: 12,
+      INVALID_MODIFICATION_ERR: 13,
+      NAMESPACE_ERR: 14,
+      INVALID_ACCESS_ERR: 15,
+      VALIDATION_ERR: 16,
+      TYPE_MISMATCH_ERR: 17,
+      SECURITY_ERR: 18,
+      NETWORK_ERR: 19,
+      ABORT_ERR: 20,
+      URL_MISMATCH_ERR: 21,
+      QUOTA_EXCEEDED_ERR: 22,
+      TIMEOUT_ERR: 23,
+      INVALID_NODE_TYPE_ERR: 24,
+      DATA_CLONE_ERR: 25
+    };
+    var entries = Object.entries(ExceptionCode);
+    for (i = 0; i < entries.length; i++) {
+      key = entries[i][0];
+      DOMException2[key] = entries[i][1];
+    }
+    var key;
+    var i;
+    function ParseError(message, locator) {
+      this.message = message;
+      this.locator = locator;
+      if (Error.captureStackTrace) Error.captureStackTrace(this, ParseError);
+    }
+    extendError(ParseError);
+    exports.DOMException = DOMException2;
+    exports.DOMExceptionName = DOMExceptionName;
+    exports.ExceptionCode = ExceptionCode;
+    exports.ParseError = ParseError;
+  }
+});
+
+// node_modules/@xmldom/xmldom/lib/grammar.js
+var require_grammar = __commonJS({
+  "node_modules/@xmldom/xmldom/lib/grammar.js"(exports) {
+    "use strict";
+    function detectUnicodeSupport(RegExpImpl) {
+      try {
+        if (typeof RegExpImpl !== "function") {
+          RegExpImpl = RegExp;
+        }
+        var match = new RegExpImpl("\u{1D306}", "u").exec("\u{1D306}");
+        return !!match && match[0].length === 2;
+      } catch (error2) {
+      }
+      return false;
+    }
+    var UNICODE_SUPPORT = detectUnicodeSupport();
+    function chars(regexp) {
+      if (regexp.source[0] !== "[") {
+        throw new Error(regexp + " can not be used with chars");
+      }
+      return regexp.source.slice(1, regexp.source.lastIndexOf("]"));
+    }
+    function chars_without(regexp, search) {
+      if (regexp.source[0] !== "[") {
+        throw new Error("/" + regexp.source + "/ can not be used with chars_without");
+      }
+      if (!search || typeof search !== "string") {
+        throw new Error(JSON.stringify(search) + " is not a valid search");
+      }
+      if (regexp.source.indexOf(search) === -1) {
+        throw new Error('"' + search + '" is not is /' + regexp.source + "/");
+      }
+      if (search === "-" && regexp.source.indexOf(search) !== 1) {
+        throw new Error('"' + search + '" is not at the first postion of /' + regexp.source + "/");
+      }
+      return new RegExp(regexp.source.replace(search, ""), UNICODE_SUPPORT ? "u" : "");
+    }
+    function reg(args) {
+      var self = this;
+      return new RegExp(
+        Array.prototype.slice.call(arguments).map(function(part) {
+          var isStr = typeof part === "string";
+          if (isStr && self === void 0 && part === "|") {
+            throw new Error("use regg instead of reg to wrap expressions with `|`!");
+          }
+          return isStr ? part : part.source;
+        }).join(""),
+        UNICODE_SUPPORT ? "mu" : "m"
+      );
+    }
+    function regg(args) {
+      if (arguments.length === 0) {
+        throw new Error("no parameters provided");
+      }
+      return reg.apply(regg, ["(?:"].concat(Array.prototype.slice.call(arguments), [")"]));
+    }
+    var UNICODE_REPLACEMENT_CHARACTER = "\uFFFD";
+    var Char = /[-\x09\x0A\x0D\x20-\x2C\x2E-\uD7FF\uE000-\uFFFD]/;
+    if (UNICODE_SUPPORT) {
+      Char = reg("[", chars(Char), "\\u{10000}-\\u{10FFFF}", "]");
+    }
+    var InvalidChar = new RegExp("[^" + chars(Char) + "]", UNICODE_SUPPORT ? "u" : "");
+    var _SChar = /[\x20\x09\x0D\x0A]/;
+    var SChar_s = chars(_SChar);
+    var S = reg(_SChar, "+");
+    var S_OPT = reg(_SChar, "*");
+    var NameStartChar = /[:_a-zA-Z\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0370-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]/;
+    if (UNICODE_SUPPORT) {
+      NameStartChar = reg("[", chars(NameStartChar), "\\u{10000}-\\u{10FFFF}", "]");
+    }
+    var NameStartChar_s = chars(NameStartChar);
+    var NameChar = reg("[", NameStartChar_s, chars(/[-.0-9\xB7]/), chars(/[\u0300-\u036F\u203F-\u2040]/), "]");
+    var Name = reg(NameStartChar, NameChar, "*");
+    var Nmtoken = reg(NameChar, "+");
+    var EntityRef = reg("&", Name, ";");
+    var CharRef = regg(/&#[0-9]+;|&#x[0-9a-fA-F]+;/);
+    var Reference = regg(EntityRef, "|", CharRef);
+    var PEReference = reg("%", Name, ";");
+    var EntityValue = regg(
+      reg('"', regg(/[^%&"]/, "|", PEReference, "|", Reference), "*", '"'),
+      "|",
+      reg("'", regg(/[^%&']/, "|", PEReference, "|", Reference), "*", "'")
+    );
+    var AttValue = regg('"', regg(/[^<&"]/, "|", Reference), "*", '"', "|", "'", regg(/[^<&']/, "|", Reference), "*", "'");
+    var NCNameStartChar = chars_without(NameStartChar, ":");
+    var NCNameChar = chars_without(NameChar, ":");
+    var NCName = reg(NCNameStartChar, NCNameChar, "*");
+    var QName = reg(NCName, regg(":", NCName), "?");
+    var QName_exact = reg("^", QName, "$");
+    var QName_group = reg("(", QName, ")");
+    var SystemLiteral = regg(/"[^"]*"|'[^']*'/);
+    var PI = reg(/^<\?/, "(", Name, ")", regg(S, "(", Char, "*?)"), "?", /\?>/);
+    var PubidChar = /[\x20\x0D\x0Aa-zA-Z0-9-'()+,./:=?;!*#@$_%]/;
+    var PubidLiteral = regg('"', PubidChar, '*"', "|", "'", chars_without(PubidChar, "'"), "*'");
+    var COMMENT_START = "<!--";
+    var COMMENT_END = "-->";
+    var Comment = reg(COMMENT_START, regg(chars_without(Char, "-"), "|", reg("-", chars_without(Char, "-"))), "*", COMMENT_END);
+    var PCDATA = "#PCDATA";
+    var Mixed = regg(
+      reg(/\(/, S_OPT, PCDATA, regg(S_OPT, /\|/, S_OPT, QName), "*", S_OPT, /\)\*/),
+      "|",
+      reg(/\(/, S_OPT, PCDATA, S_OPT, /\)/)
+    );
+    var _children_quantity = /[?*+]?/;
+    var children2 = reg(
+      /\([^>]+\)/,
+      _children_quantity
+      /*regg(choice, '|', seq), _children_quantity*/
+    );
+    var contentspec = regg("EMPTY", "|", "ANY", "|", Mixed, "|", children2);
+    var ELEMENTDECL_START = "<!ELEMENT";
+    var elementdecl = reg(ELEMENTDECL_START, S, regg(QName, "|", PEReference), S, regg(contentspec, "|", PEReference), S_OPT, ">");
+    var NotationType = reg("NOTATION", S, /\(/, S_OPT, Name, regg(S_OPT, /\|/, S_OPT, Name), "*", S_OPT, /\)/);
+    var Enumeration = reg(/\(/, S_OPT, Nmtoken, regg(S_OPT, /\|/, S_OPT, Nmtoken), "*", S_OPT, /\)/);
+    var EnumeratedType = regg(NotationType, "|", Enumeration);
+    var AttType = regg(/CDATA|ID|IDREF|IDREFS|ENTITY|ENTITIES|NMTOKEN|NMTOKENS/, "|", EnumeratedType);
+    var DefaultDecl = regg(/#REQUIRED|#IMPLIED/, "|", regg(regg("#FIXED", S), "?", AttValue));
+    var AttDef = regg(S, Name, S, AttType, S, DefaultDecl);
+    var ATTLIST_DECL_START = "<!ATTLIST";
+    var AttlistDecl = reg(ATTLIST_DECL_START, S, Name, AttDef, "*", S_OPT, ">");
+    var ABOUT_LEGACY_COMPAT = "about:legacy-compat";
+    var ABOUT_LEGACY_COMPAT_SystemLiteral = regg('"' + ABOUT_LEGACY_COMPAT + '"', "|", "'" + ABOUT_LEGACY_COMPAT + "'");
+    var SYSTEM = "SYSTEM";
+    var PUBLIC = "PUBLIC";
+    var ExternalID = regg(regg(SYSTEM, S, SystemLiteral), "|", regg(PUBLIC, S, PubidLiteral, S, SystemLiteral));
+    var ExternalID_match = reg(
+      "^",
+      regg(
+        regg(SYSTEM, S, "(?<SystemLiteralOnly>", SystemLiteral, ")"),
+        "|",
+        regg(PUBLIC, S, "(?<PubidLiteral>", PubidLiteral, ")", S, "(?<SystemLiteral>", SystemLiteral, ")")
+      )
+    );
+    var PubidLiteral_match = reg("^", PubidLiteral, "$");
+    var SystemLiteral_match = reg("^", SystemLiteral, "$");
+    var NDataDecl = regg(S, "NDATA", S, Name);
+    var EntityDef = regg(EntityValue, "|", regg(ExternalID, NDataDecl, "?"));
+    var ENTITY_DECL_START = "<!ENTITY";
+    var GEDecl = reg(ENTITY_DECL_START, S, Name, S, EntityDef, S_OPT, ">");
+    var PEDef = regg(EntityValue, "|", ExternalID);
+    var PEDecl = reg(ENTITY_DECL_START, S, "%", S, Name, S, PEDef, S_OPT, ">");
+    var EntityDecl = regg(GEDecl, "|", PEDecl);
+    var PublicID = reg(PUBLIC, S, PubidLiteral);
+    var NotationDecl = reg("<!NOTATION", S, Name, S, regg(ExternalID, "|", PublicID), S_OPT, ">");
+    var Eq = reg(S_OPT, "=", S_OPT);
+    var VersionNum = /1[.]\d+/;
+    var VersionInfo = reg(S, "version", Eq, regg("'", VersionNum, "'", "|", '"', VersionNum, '"'));
+    var EncName = /[A-Za-z][-A-Za-z0-9._]*/;
+    var EncodingDecl = regg(S, "encoding", Eq, regg('"', EncName, '"', "|", "'", EncName, "'"));
+    var SDDecl = regg(S, "standalone", Eq, regg("'", regg("yes", "|", "no"), "'", "|", '"', regg("yes", "|", "no"), '"'));
+    var XMLDecl = reg(/^<\?xml/, VersionInfo, EncodingDecl, "?", SDDecl, "?", S_OPT, /\?>/);
+    var DOCTYPE_DECL_START = "<!DOCTYPE";
+    var CDATA_START = "<![CDATA[";
+    var CDATA_END = "]]>";
+    var CDStart = /<!\[CDATA\[/;
+    var CDEnd = /\]\]>/;
+    var CData = reg(Char, "*?", CDEnd);
+    var CDSect = reg(CDStart, CData);
+    exports.chars = chars;
+    exports.chars_without = chars_without;
+    exports.detectUnicodeSupport = detectUnicodeSupport;
+    exports.reg = reg;
+    exports.regg = regg;
+    exports.ABOUT_LEGACY_COMPAT = ABOUT_LEGACY_COMPAT;
+    exports.ABOUT_LEGACY_COMPAT_SystemLiteral = ABOUT_LEGACY_COMPAT_SystemLiteral;
+    exports.AttlistDecl = AttlistDecl;
+    exports.CDATA_START = CDATA_START;
+    exports.CDATA_END = CDATA_END;
+    exports.CDSect = CDSect;
+    exports.Char = Char;
+    exports.Comment = Comment;
+    exports.COMMENT_START = COMMENT_START;
+    exports.COMMENT_END = COMMENT_END;
+    exports.DOCTYPE_DECL_START = DOCTYPE_DECL_START;
+    exports.elementdecl = elementdecl;
+    exports.EntityDecl = EntityDecl;
+    exports.EntityValue = EntityValue;
+    exports.ExternalID = ExternalID;
+    exports.ExternalID_match = ExternalID_match;
+    exports.Name = Name;
+    exports.NotationDecl = NotationDecl;
+    exports.Reference = Reference;
+    exports.PEReference = PEReference;
+    exports.PI = PI;
+    exports.PUBLIC = PUBLIC;
+    exports.PubidLiteral = PubidLiteral;
+    exports.PubidLiteral_match = PubidLiteral_match;
+    exports.QName = QName;
+    exports.QName_exact = QName_exact;
+    exports.QName_group = QName_group;
+    exports.S = S;
+    exports.SChar_s = SChar_s;
+    exports.S_OPT = S_OPT;
+    exports.SYSTEM = SYSTEM;
+    exports.SystemLiteral = SystemLiteral;
+    exports.SystemLiteral_match = SystemLiteral_match;
+    exports.InvalidChar = InvalidChar;
+    exports.UNICODE_REPLACEMENT_CHARACTER = UNICODE_REPLACEMENT_CHARACTER;
+    exports.UNICODE_SUPPORT = UNICODE_SUPPORT;
+    exports.XMLDecl = XMLDecl;
   }
 });
 
 // node_modules/@xmldom/xmldom/lib/dom.js
 var require_dom = __commonJS({
   "node_modules/@xmldom/xmldom/lib/dom.js"(exports) {
+    "use strict";
     var conventions = require_conventions();
     var find = conventions.find;
+    var hasDefaultHTMLNamespace = conventions.hasDefaultHTMLNamespace;
+    var hasOwn = conventions.hasOwn;
+    var isHTMLMimeType = conventions.isHTMLMimeType;
+    var isHTMLRawTextElement = conventions.isHTMLRawTextElement;
+    var isHTMLVoidElement = conventions.isHTMLVoidElement;
+    var MIME_TYPE = conventions.MIME_TYPE;
     var NAMESPACE = conventions.NAMESPACE;
+    var PDC = /* @__PURE__ */ Symbol();
+    var errors = require_errors3();
+    var DOMException2 = errors.DOMException;
+    var DOMExceptionName = errors.DOMExceptionName;
+    var g = require_grammar();
+    function checkSymbol(symbol) {
+      if (symbol !== PDC) {
+        throw new TypeError("Illegal constructor");
+      }
+    }
     function notEmptyString(input) {
       return input !== "";
     }
@@ -21448,7 +21896,7 @@ var require_dom = __commonJS({
       return input ? input.split(/[\t\n\f\r ]+/).filter(notEmptyString) : [];
     }
     function orderedSetReducer(current, element) {
-      if (!current.hasOwnProperty(element)) {
+      if (!hasOwn(current, element)) {
         current[element] = true;
       }
       return current;
@@ -21463,9 +21911,44 @@ var require_dom = __commonJS({
         return list && list.indexOf(element) !== -1;
       };
     }
+    function validateQualifiedName(qualifiedName) {
+      if (!g.QName_exact.test(qualifiedName)) {
+        throw new DOMException2(DOMException2.INVALID_CHARACTER_ERR, 'invalid character in qualified name "' + qualifiedName + '"');
+      }
+    }
+    function validateAndExtract(namespace, qualifiedName) {
+      validateQualifiedName(qualifiedName);
+      namespace = namespace || null;
+      var prefix = null;
+      var localName = qualifiedName;
+      if (qualifiedName.indexOf(":") >= 0) {
+        var splitResult = qualifiedName.split(":");
+        prefix = splitResult[0];
+        localName = splitResult[1];
+      }
+      if (prefix !== null && namespace === null) {
+        throw new DOMException2(DOMException2.NAMESPACE_ERR, "prefix is non-null and namespace is null");
+      }
+      if (prefix === "xml" && namespace !== conventions.NAMESPACE.XML) {
+        throw new DOMException2(DOMException2.NAMESPACE_ERR, 'prefix is "xml" and namespace is not the XML namespace');
+      }
+      if ((prefix === "xmlns" || qualifiedName === "xmlns") && namespace !== conventions.NAMESPACE.XMLNS) {
+        throw new DOMException2(
+          DOMException2.NAMESPACE_ERR,
+          'either qualifiedName or prefix is "xmlns" and namespace is not the XMLNS namespace'
+        );
+      }
+      if (namespace === conventions.NAMESPACE.XMLNS && prefix !== "xmlns" && qualifiedName !== "xmlns") {
+        throw new DOMException2(
+          DOMException2.NAMESPACE_ERR,
+          'namespace is the XMLNS namespace and neither qualifiedName nor prefix is "xmlns"'
+        );
+      }
+      return [namespace, prefix, localName];
+    }
     function copy(src, dest) {
       for (var p in src) {
-        if (Object.prototype.hasOwnProperty.call(src, p)) {
+        if (hasOwn(src, p)) {
           dest[p] = src[p];
         }
       }
@@ -21473,14 +21956,12 @@ var require_dom = __commonJS({
     function _extends(Class, Super) {
       var pt = Class.prototype;
       if (!(pt instanceof Super)) {
-        let t2 = function() {
+        let t = function() {
         };
-        var t = t2;
-        ;
-        t2.prototype = Super.prototype;
-        t2 = new t2();
-        copy(pt, t2);
-        Class.prototype = pt = t2;
+        t.prototype = Super.prototype;
+        t = new t();
+        copy(pt, t);
+        Class.prototype = pt = t;
       }
       if (pt.constructor != Class) {
         if (typeof Class != "function") {
@@ -21492,90 +21973,139 @@ var require_dom = __commonJS({
     var NodeType = {};
     var ELEMENT_NODE = NodeType.ELEMENT_NODE = 1;
     var ATTRIBUTE_NODE = NodeType.ATTRIBUTE_NODE = 2;
-    var TEXT_NODE = NodeType.TEXT_NODE = 3;
+    var TEXT_NODE2 = NodeType.TEXT_NODE = 3;
     var CDATA_SECTION_NODE = NodeType.CDATA_SECTION_NODE = 4;
     var ENTITY_REFERENCE_NODE = NodeType.ENTITY_REFERENCE_NODE = 5;
     var ENTITY_NODE = NodeType.ENTITY_NODE = 6;
     var PROCESSING_INSTRUCTION_NODE = NodeType.PROCESSING_INSTRUCTION_NODE = 7;
-    var COMMENT_NODE = NodeType.COMMENT_NODE = 8;
+    var COMMENT_NODE2 = NodeType.COMMENT_NODE = 8;
     var DOCUMENT_NODE = NodeType.DOCUMENT_NODE = 9;
     var DOCUMENT_TYPE_NODE = NodeType.DOCUMENT_TYPE_NODE = 10;
     var DOCUMENT_FRAGMENT_NODE = NodeType.DOCUMENT_FRAGMENT_NODE = 11;
     var NOTATION_NODE = NodeType.NOTATION_NODE = 12;
-    var ExceptionCode = {};
-    var ExceptionMessage = {};
-    var INDEX_SIZE_ERR = ExceptionCode.INDEX_SIZE_ERR = (ExceptionMessage[1] = "Index size error", 1);
-    var DOMSTRING_SIZE_ERR = ExceptionCode.DOMSTRING_SIZE_ERR = (ExceptionMessage[2] = "DOMString size error", 2);
-    var HIERARCHY_REQUEST_ERR = ExceptionCode.HIERARCHY_REQUEST_ERR = (ExceptionMessage[3] = "Hierarchy request error", 3);
-    var WRONG_DOCUMENT_ERR = ExceptionCode.WRONG_DOCUMENT_ERR = (ExceptionMessage[4] = "Wrong document", 4);
-    var INVALID_CHARACTER_ERR = ExceptionCode.INVALID_CHARACTER_ERR = (ExceptionMessage[5] = "Invalid character", 5);
-    var NO_DATA_ALLOWED_ERR = ExceptionCode.NO_DATA_ALLOWED_ERR = (ExceptionMessage[6] = "No data allowed", 6);
-    var NO_MODIFICATION_ALLOWED_ERR = ExceptionCode.NO_MODIFICATION_ALLOWED_ERR = (ExceptionMessage[7] = "No modification allowed", 7);
-    var NOT_FOUND_ERR = ExceptionCode.NOT_FOUND_ERR = (ExceptionMessage[8] = "Not found", 8);
-    var NOT_SUPPORTED_ERR = ExceptionCode.NOT_SUPPORTED_ERR = (ExceptionMessage[9] = "Not supported", 9);
-    var INUSE_ATTRIBUTE_ERR = ExceptionCode.INUSE_ATTRIBUTE_ERR = (ExceptionMessage[10] = "Attribute in use", 10);
-    var INVALID_STATE_ERR = ExceptionCode.INVALID_STATE_ERR = (ExceptionMessage[11] = "Invalid state", 11);
-    var SYNTAX_ERR = ExceptionCode.SYNTAX_ERR = (ExceptionMessage[12] = "Syntax error", 12);
-    var INVALID_MODIFICATION_ERR = ExceptionCode.INVALID_MODIFICATION_ERR = (ExceptionMessage[13] = "Invalid modification", 13);
-    var NAMESPACE_ERR = ExceptionCode.NAMESPACE_ERR = (ExceptionMessage[14] = "Invalid namespace", 14);
-    var INVALID_ACCESS_ERR = ExceptionCode.INVALID_ACCESS_ERR = (ExceptionMessage[15] = "Invalid access", 15);
-    function DOMException2(code, message) {
-      if (message instanceof Error) {
-        var error2 = message;
-      } else {
-        error2 = this;
-        Error.call(this, ExceptionMessage[code]);
-        this.message = ExceptionMessage[code];
-        if (Error.captureStackTrace) Error.captureStackTrace(this, DOMException2);
+    var DocumentPosition = conventions.freeze({
+      DOCUMENT_POSITION_DISCONNECTED: 1,
+      DOCUMENT_POSITION_PRECEDING: 2,
+      DOCUMENT_POSITION_FOLLOWING: 4,
+      DOCUMENT_POSITION_CONTAINS: 8,
+      DOCUMENT_POSITION_CONTAINED_BY: 16,
+      DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC: 32
+    });
+    function commonAncestor(a, b) {
+      if (b.length < a.length) return commonAncestor(b, a);
+      var c = null;
+      for (var n in a) {
+        if (a[n] !== b[n]) return c;
+        c = a[n];
       }
-      error2.code = code;
-      if (message) this.message = this.message + ": " + message;
-      return error2;
+      return c;
     }
-    DOMException2.prototype = Error.prototype;
-    copy(ExceptionCode, DOMException2);
+    function docGUID(doc) {
+      if (!doc.guid) doc.guid = Math.random();
+      return doc.guid;
+    }
     function NodeList() {
     }
     NodeList.prototype = {
       /**
-       * The number of nodes in the list. The range of valid child node indices is 0 to length-1 inclusive.
-       * @standard level1
+       * The number of nodes in the list. The range of valid child node indices is 0 to length-1
+       * inclusive.
+       *
+       * @type {number}
        */
       length: 0,
       /**
-       * Returns the indexth item in the collection. If index is greater than or equal to the number of nodes in the list, this returns null.
-       * @standard level1
-       * @param index  unsigned long
-       *   Index into the collection.
-       * @return Node
-       * 	The node at the indexth position in the NodeList, or null if that is not a valid index.
+       * Returns the item at `index`. If index is greater than or equal to the number of nodes in
+       * the list, this returns null.
+       *
+       * @param index
+       * Unsigned long Index into the collection.
+       * @returns {Node | null}
+       * The node at position `index` in the NodeList,
+       * or null if that is not a valid index.
        */
       item: function(index) {
         return index >= 0 && index < this.length ? this[index] : null;
       },
-      toString: function(isHTML, nodeFilter, options) {
-        var requireWellFormed = !!options && !!options.requireWellFormed;
+      /**
+       * Returns a string representation of the NodeList.
+       *
+       * Accepts the same `options` object as `XMLSerializer.prototype.serializeToString`
+       * (`requireWellFormed`, `splitCDATASections`, `nodeFilter`). Passing a function is treated as
+       * a legacy `nodeFilter` for backward compatibility.
+       *
+       * @param {Object | function} [options]
+       * @param {boolean} [options.requireWellFormed=false]
+       * @param {boolean} [options.splitCDATASections=true]
+       * @param {function} [options.nodeFilter]
+       * @returns {string}
+       */
+      toString: function(options) {
+        var opts;
+        if (typeof options === "function") {
+          opts = { requireWellFormed: false, splitCDATASections: true, nodeFilter: options };
+        } else if (!!options) {
+          opts = {
+            requireWellFormed: !!options.requireWellFormed,
+            splitCDATASections: options.splitCDATASections !== false,
+            nodeFilter: options.nodeFilter || null
+          };
+        } else {
+          opts = { requireWellFormed: false, splitCDATASections: true, nodeFilter: null };
+        }
         for (var buf = [], i = 0; i < this.length; i++) {
-          serializeToString(this[i], buf, isHTML, nodeFilter, null, requireWellFormed);
+          serializeToString(this[i], buf, null, opts);
         }
         return buf.join("");
       },
       /**
-       * @private
-       * @param {function (Node):boolean} predicate
+       * Filters the NodeList based on a predicate.
+       *
+       * @param {function(Node): boolean} predicate
+       * - A predicate function to filter the NodeList.
        * @returns {Node[]}
+       * An array of nodes that satisfy the predicate.
+       * @private
        */
       filter: function(predicate) {
         return Array.prototype.filter.call(this, predicate);
       },
       /**
-       * @private
+       * Returns the first index at which a given node can be found in the NodeList, or -1 if it is
+       * not present.
+       *
        * @param {Node} item
+       * - The Node item to locate in the NodeList.
        * @returns {number}
+       * The first index of the node in the NodeList; -1 if not found.
+       * @private
        */
       indexOf: function(item) {
         return Array.prototype.indexOf.call(this, item);
       }
+    };
+    NodeList.prototype[Symbol.iterator] = function() {
+      var me = this;
+      var index = 0;
+      return {
+        next: function() {
+          if (index < me.length) {
+            return {
+              value: me[index++],
+              done: false
+            };
+          } else {
+            return {
+              done: true
+            };
+          }
+        },
+        return: function() {
+          return {
+            done: true
+          };
+        }
+      };
     };
     function LiveNodeList(node, refresh) {
       this._node = node;
@@ -21589,7 +22119,7 @@ var require_dom = __commonJS({
         __set__(list, "length", ls.length);
         if (!list.$$length || ls.length < list.$$length) {
           for (var i = ls.length; i in list; i++) {
-            if (Object.prototype.hasOwnProperty.call(list, i)) {
+            if (hasOwn(list, i)) {
               delete list[i];
             }
           }
@@ -21606,18 +22136,20 @@ var require_dom = __commonJS({
     function NamedNodeMap() {
     }
     function _findNodeIndex(list, node) {
-      var i = list.length;
-      while (i--) {
+      var i = 0;
+      while (i < list.length) {
         if (list[i] === node) {
           return i;
         }
+        i++;
       }
     }
     function _addNamedNode(el, list, newAttr, oldAttr) {
       if (oldAttr) {
         list[_findNodeIndex(list, oldAttr)] = newAttr;
       } else {
-        list[list.length++] = newAttr;
+        list[list.length] = newAttr;
+        list.length++;
       }
       if (el) {
         newAttr.ownerElement = el;
@@ -21632,7 +22164,7 @@ var require_dom = __commonJS({
       var i = _findNodeIndex(list, attr);
       if (i >= 0) {
         var lastIndex = list.length - 1;
-        while (i < lastIndex) {
+        while (i <= lastIndex) {
           list[i] = list[++i];
         }
         list.length = lastIndex;
@@ -21640,113 +22172,273 @@ var require_dom = __commonJS({
           var doc = el.ownerDocument;
           if (doc) {
             _onRemoveAttribute(doc, el, attr);
-            attr.ownerElement = null;
           }
+          attr.ownerElement = null;
         }
-      } else {
-        throw new DOMException2(NOT_FOUND_ERR, new Error(el.tagName + "@" + attr));
       }
     }
     NamedNodeMap.prototype = {
       length: 0,
       item: NodeList.prototype.item,
-      getNamedItem: function(key) {
-        var i = this.length;
-        while (i--) {
+      /**
+       * Get an attribute by name. Note: Name is in lower case in case of HTML namespace and
+       * document.
+       *
+       * @param {string} localName
+       * The local name of the attribute.
+       * @returns {Attr | null}
+       * The attribute with the given local name, or null if no such attribute exists.
+       * @see https://dom.spec.whatwg.org/#concept-element-attributes-get-by-name
+       */
+      getNamedItem: function(localName) {
+        if (this._ownerElement && this._ownerElement._isInHTMLDocumentAndNamespace()) {
+          localName = localName.toLowerCase();
+        }
+        var i = 0;
+        while (i < this.length) {
           var attr = this[i];
-          if (attr.nodeName == key) {
+          if (attr.nodeName === localName) {
             return attr;
           }
+          i++;
         }
+        return null;
       },
+      /**
+       * Set an attribute.
+       *
+       * @param {Attr} attr
+       * The attribute to set.
+       * @returns {Attr | null}
+       * The old attribute with the same local name and namespace URI as the new one, or null if no
+       * such attribute exists.
+       * @throws {DOMException}
+       * With code:
+       * - {@link INUSE_ATTRIBUTE_ERR} - If the attribute is already an attribute of another
+       * element.
+       * @see https://dom.spec.whatwg.org/#concept-element-attributes-set
+       */
       setNamedItem: function(attr) {
         var el = attr.ownerElement;
-        if (el && el != this._ownerElement) {
-          throw new DOMException2(INUSE_ATTRIBUTE_ERR);
+        if (el && el !== this._ownerElement) {
+          throw new DOMException2(DOMException2.INUSE_ATTRIBUTE_ERR);
         }
-        var oldAttr = this.getNamedItem(attr.nodeName);
+        var oldAttr = this.getNamedItemNS(attr.namespaceURI, attr.localName);
+        if (oldAttr === attr) {
+          return attr;
+        }
         _addNamedNode(this._ownerElement, this, attr, oldAttr);
         return oldAttr;
       },
-      /* returns Node */
+      /**
+       * Set an attribute, replacing an existing attribute with the same local name and namespace
+       * URI if one exists.
+       *
+       * @param {Attr} attr
+       * The attribute to set.
+       * @returns {Attr | null}
+       * The old attribute with the same local name and namespace URI as the new one, or null if no
+       * such attribute exists.
+       * @throws {DOMException}
+       * Throws a DOMException with the name "InUseAttributeError" if the attribute is already an
+       * attribute of another element.
+       * @see https://dom.spec.whatwg.org/#concept-element-attributes-set
+       */
       setNamedItemNS: function(attr) {
-        var el = attr.ownerElement, oldAttr;
-        if (el && el != this._ownerElement) {
-          throw new DOMException2(INUSE_ATTRIBUTE_ERR);
-        }
-        oldAttr = this.getNamedItemNS(attr.namespaceURI, attr.localName);
-        _addNamedNode(this._ownerElement, this, attr, oldAttr);
-        return oldAttr;
+        return this.setNamedItem(attr);
       },
-      /* returns Node */
-      removeNamedItem: function(key) {
-        var attr = this.getNamedItem(key);
+      /**
+       * Removes an attribute specified by the local name.
+       *
+       * @param {string} localName
+       * The local name of the attribute to be removed.
+       * @returns {Attr}
+       * The attribute node that was removed.
+       * @throws {DOMException}
+       * With code:
+       * - {@link DOMException.NOT_FOUND_ERR} if no attribute with the given name is found.
+       * @see https://dom.spec.whatwg.org/#dom-namednodemap-removenameditem
+       * @see https://dom.spec.whatwg.org/#concept-element-attributes-remove-by-name
+       */
+      removeNamedItem: function(localName) {
+        var attr = this.getNamedItem(localName);
+        if (!attr) {
+          throw new DOMException2(DOMException2.NOT_FOUND_ERR, localName);
+        }
         _removeNamedNode(this._ownerElement, this, attr);
         return attr;
       },
-      // raises: NOT_FOUND_ERR,NO_MODIFICATION_ALLOWED_ERR
-      //for level2
+      /**
+       * Removes an attribute specified by the namespace and local name.
+       *
+       * @param {string | null} namespaceURI
+       * The namespace URI of the attribute to be removed.
+       * @param {string} localName
+       * The local name of the attribute to be removed.
+       * @returns {Attr}
+       * The attribute node that was removed.
+       * @throws {DOMException}
+       * With code:
+       * - {@link DOMException.NOT_FOUND_ERR} if no attribute with the given namespace URI and local
+       * name is found.
+       * @see https://dom.spec.whatwg.org/#dom-namednodemap-removenameditemns
+       * @see https://dom.spec.whatwg.org/#concept-element-attributes-remove-by-namespace
+       */
       removeNamedItemNS: function(namespaceURI, localName) {
         var attr = this.getNamedItemNS(namespaceURI, localName);
+        if (!attr) {
+          throw new DOMException2(DOMException2.NOT_FOUND_ERR, namespaceURI ? namespaceURI + " : " + localName : localName);
+        }
         _removeNamedNode(this._ownerElement, this, attr);
         return attr;
       },
+      /**
+       * Get an attribute by namespace and local name.
+       *
+       * @param {string | null} namespaceURI
+       * The namespace URI of the attribute.
+       * @param {string} localName
+       * The local name of the attribute.
+       * @returns {Attr | null}
+       * The attribute with the given namespace URI and local name, or null if no such attribute
+       * exists.
+       * @see https://dom.spec.whatwg.org/#concept-element-attributes-get-by-namespace
+       */
       getNamedItemNS: function(namespaceURI, localName) {
-        var i = this.length;
-        while (i--) {
+        if (!namespaceURI) {
+          namespaceURI = null;
+        }
+        var i = 0;
+        while (i < this.length) {
           var node = this[i];
-          if (node.localName == localName && node.namespaceURI == namespaceURI) {
+          if (node.localName === localName && node.namespaceURI === namespaceURI) {
             return node;
           }
+          i++;
         }
         return null;
       }
+    };
+    NamedNodeMap.prototype[Symbol.iterator] = function() {
+      var me = this;
+      var index = 0;
+      return {
+        next: function() {
+          if (index < me.length) {
+            return {
+              value: me[index++],
+              done: false
+            };
+          } else {
+            return {
+              done: true
+            };
+          }
+        },
+        return: function() {
+          return {
+            done: true
+          };
+        }
+      };
     };
     function DOMImplementation() {
     }
     DOMImplementation.prototype = {
       /**
-       * The DOMImplementation.hasFeature() method returns a Boolean flag indicating if a given feature is supported.
-       * The different implementations fairly diverged in what kind of features were reported.
-       * The latest version of the spec settled to force this method to always return true, where the functionality was accurate and in use.
+       * Test if the DOM implementation implements a specific feature and version, as specified in
+       * {@link https://www.w3.org/TR/DOM-Level-3-Core/core.html#DOMFeatures DOM Features}.
        *
-       * @deprecated It is deprecated and modern browsers return true in all cases.
+       * The DOMImplementation.hasFeature() method returns a Boolean flag indicating if a given
+       * feature is supported. The different implementations fairly diverged in what kind of
+       * features were reported. The latest version of the spec settled to force this method to
+       * always return true, where the functionality was accurate and in use.
        *
+       * @deprecated
+       * It is deprecated and modern browsers return true in all cases.
+       * @function DOMImplementation#hasFeature
        * @param {string} feature
+       * The name of the feature to test.
        * @param {string} [version]
-       * @returns {boolean} always true
-       *
+       * This is the version number of the feature to test.
+       * @returns {boolean}
+       * Always returns true.
        * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/hasFeature MDN
        * @see https://www.w3.org/TR/REC-DOM-Level-1/level-one-core.html#ID-5CED94D7 DOM Level 1 Core
        * @see https://dom.spec.whatwg.org/#dom-domimplementation-hasfeature DOM Living Standard
+       * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#ID-5CED94D7 DOM Level 3 Core
        */
       hasFeature: function(feature, version) {
         return true;
       },
       /**
-       * Creates an XML Document object of the specified type with its document element.
+       * Creates a DOM Document object of the specified type with its document element. Note that
+       * based on the {@link DocumentType}
+       * given to create the document, the implementation may instantiate specialized
+       * {@link Document} objects that support additional features than the "Core", such as "HTML"
+       * {@link https://www.w3.org/TR/DOM-Level-3-Core/references.html#DOM2HTML DOM Level 2 HTML}.
+       * On the other hand, setting the {@link DocumentType} after the document was created makes
+       * this very unlikely to happen. Alternatively, specialized {@link Document} creation methods,
+       * such as createHTMLDocument
+       * {@link https://www.w3.org/TR/DOM-Level-3-Core/references.html#DOM2HTML DOM Level 2 HTML},
+       * can be used to obtain specific types of {@link Document} objects.
        *
        * __It behaves slightly different from the description in the living standard__:
-       * - There is no interface/class `XMLDocument`, it returns a `Document` instance.
-       * - `contentType`, `encoding`, `mode`, `origin`, `url` fields are currently not declared.
-       * - this implementation is not validating names or qualified names
-       *   (when parsing XML strings, the SAX parser takes care of that)
+       * - There is no interface/class `XMLDocument`, it returns a `Document`
+       * instance (with it's `type` set to `'xml'`).
+       * - `encoding`, `mode`, `origin`, `url` fields are currently not declared.
        *
-       * @param {string|null} namespaceURI
-       * @param {string} qualifiedName
-       * @param {DocumentType=null} doctype
+       * @function DOMImplementation.createDocument
+       * @param {string | null} namespaceURI
+       * The
+       * {@link https://www.w3.org/TR/DOM-Level-3-Core/glossary.html#dt-namespaceURI namespace URI}
+       * of the document element to create or null.
+       * @param {string | null} qualifiedName
+       * The
+       * {@link https://www.w3.org/TR/DOM-Level-3-Core/glossary.html#dt-qualifiedname qualified name}
+       * of the document element to be created or null.
+       * @param {DocumentType | null} [doctype=null]
+       * The type of document to be created or null. When doctype is not null, its
+       * {@link Node#ownerDocument} attribute is set to the document being created. Default is
+       * `null`
        * @returns {Document}
+       * A new {@link Document} object with its document element. If the NamespaceURI,
+       * qualifiedName, and doctype are null, the returned {@link Document} is empty with no
+       * document element.
+       * @throws {DOMException}
+       * With code:
        *
+       * - `INVALID_CHARACTER_ERR`: Raised if the specified qualified name is not an XML name
+       * according to {@link https://www.w3.org/TR/DOM-Level-3-Core/references.html#XML XML 1.0}.
+       * - `NAMESPACE_ERR`: Raised if the qualifiedName is malformed, if the qualifiedName has a
+       * prefix and the namespaceURI is null, or if the qualifiedName is null and the namespaceURI
+       * is different from null, or if the qualifiedName has a prefix that is "xml" and the
+       * namespaceURI is different from "{@link http://www.w3.org/XML/1998/namespace}"
+       * {@link https://www.w3.org/TR/DOM-Level-3-Core/references.html#Namespaces XML Namespaces},
+       * or if the DOM implementation does not support the "XML" feature but a non-null namespace
+       * URI was provided, since namespaces were defined by XML.
+       * - `WRONG_DOCUMENT_ERR`: Raised if doctype has already been used with a different document
+       * or was created from a different implementation.
+       * - `NOT_SUPPORTED_ERR`: May be raised if the implementation does not support the feature
+       * "XML" and the language exposed through the Document does not support XML Namespaces (such
+       * as {@link https://www.w3.org/TR/DOM-Level-3-Core/references.html#HTML40 HTML 4.01}).
+       * @since DOM Level 2.
+       * @see {@link #createHTMLDocument}
        * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/createDocument MDN
-       * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocument DOM Level 2 Core (initial)
-       * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocument  DOM Level 2 Core
-       *
-       * @see https://dom.spec.whatwg.org/#validate-and-extract DOM: Validate and extract
-       * @see https://www.w3.org/TR/xml/#NT-NameStartChar XML Spec: Names
-       * @see https://www.w3.org/TR/xml-names/#ns-qualnames XML Namespaces: Qualified names
+       * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocument DOM Living Standard
+       * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#Level-2-Core-DOM-createDocument DOM
+       *      Level 3 Core
+       * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocument DOM
+       *      Level 2 Core (initial)
        */
       createDocument: function(namespaceURI, qualifiedName, doctype) {
-        var doc = new Document();
+        var contentType = MIME_TYPE.XML_APPLICATION;
+        if (namespaceURI === NAMESPACE.HTML) {
+          contentType = MIME_TYPE.XML_XHTML_APPLICATION;
+        } else if (namespaceURI === NAMESPACE.SVG) {
+          contentType = MIME_TYPE.XML_SVG_IMAGE;
+        }
+        var doc = new Document(PDC, { contentType });
         doc.implementation = this;
         doc.childNodes = new NodeList();
         doc.doctype = doctype || null;
@@ -21760,88 +22452,413 @@ var require_dom = __commonJS({
         return doc;
       },
       /**
-       * Returns a doctype, with the given `qualifiedName`, `publicId`, and `systemId`.
+       * Creates an empty DocumentType node. Entity declarations and notations are not made
+       * available. Entity reference expansions and default attribute additions do not occur.
        *
-       * __This implementation differs from the specification:__
-       * - this implementation is not validating names or qualified names
-       *   (when parsing XML strings, the SAX parser takes care of that)
+       * **This behavior is slightly different from the one in the specs**:
+       * - `encoding`, `mode`, `origin`, `url` fields are currently not declared.
+       * - `publicId` and `systemId` contain the raw data including any possible quotes,
+       *   so they can always be serialized back to the original value
+       * - `internalSubset` contains the raw string between `[` and `]` if present,
+       *   but is not parsed or validated in any form.
        *
-       * Note: `internalSubset` can only be introduced via a direct property write to `node.internalSubset` after creation.
-       * Creation-time validation of `publicId`, `systemId` is not enforced.
-       * The serializer-level check covers all mutation vectors, including direct property writes.
-       * `internalSubset` is only serialized as `[ ... ]` when both `publicId` and `systemId` are
-       * absent (empty or `'.'`) — if either external identifier is present, `internalSubset` is
-       * silently omitted from the serialized output.
-       *
+       * @function DOMImplementation#createDocumentType
        * @param {string} qualifiedName
+       * The {@link https://www.w3.org/TR/DOM-Level-3-Core/glossary.html#dt-qualifiedname qualified
+       * name} of the document type to be created.
        * @param {string} [publicId]
        * The external subset public identifier. Stored verbatim including surrounding quotes.
-       * When serialized with `requireWellFormed: true` (via the 4th-parameter options object),
-       * throws `DOMException` with code `INVALID_STATE_ERR` if the value is non-empty and does
-       * not match the XML `PubidLiteral` production (W3C DOM Parsing §3.2.1.3; XML 1.0 [12]).
+       * When serialized with `requireWellFormed: true`, the serializer throws `InvalidStateError`
+       * if the value is non-empty and does not match the XML `PubidLiteral` production
+       * (W3C DOM Parsing §3.2.1.3; XML 1.0 production [12]). Creation-time validation is not
+       * enforced — deferred to a future breaking release.
        * @param {string} [systemId]
        * The external subset system identifier. Stored verbatim including surrounding quotes.
-       * When serialized with `requireWellFormed: true`, throws `DOMException` with code
-       * `INVALID_STATE_ERR` if the value is non-empty and does not match the XML `SystemLiteral`
-       * production (W3C DOM Parsing §3.2.1.3; XML 1.0 [11]).
-       * @returns {DocumentType} which can either be used with `DOMImplementation.createDocument` upon document creation
-       * 				  or can be put into the document via methods like `Node.insertBefore()` or `Node.replaceChild()`
+       * When serialized with `requireWellFormed: true`, the serializer throws `InvalidStateError`
+       * if the value is non-empty and does not match the XML `SystemLiteral` production
+       * (W3C DOM Parsing §3.2.1.3; XML 1.0 production [11]). Creation-time validation is not
+       * enforced — deferred to a future breaking release.
+       * @param {string} [internalSubset]
+       * The internal subset or an empty string if it is not present. Stored verbatim.
+       * When serialized with `requireWellFormed: true`, the serializer throws `InvalidStateError`
+       * if the value contains `"]>"`. Creation-time validation is not enforced.
+       * @returns {DocumentType}
+       * A new {@link DocumentType} node with {@link Node#ownerDocument} set to null.
+       * @throws {DOMException}
+       * With code:
        *
-       * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/createDocumentType MDN
-       * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocType DOM Level 2 Core
-       * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocumenttype DOM Living Standard
-       *
-       * @see https://dom.spec.whatwg.org/#validate-and-extract DOM: Validate and extract
-       * @see https://www.w3.org/TR/xml/#NT-NameStartChar XML Spec: Names
-       * @see https://www.w3.org/TR/xml-names/#ns-qualnames XML Namespaces: Qualified names
+       * - `INVALID_CHARACTER_ERR`: Raised if the specified qualified name is not an XML name
+       * according to {@link https://www.w3.org/TR/DOM-Level-3-Core/references.html#XML XML 1.0}.
+       * - `NAMESPACE_ERR`: Raised if the qualifiedName is malformed.
+       * - `NOT_SUPPORTED_ERR`: May be raised if the implementation does not support the feature
+       * "XML" and the language exposed through the Document does not support XML Namespaces (such
+       * as {@link https://www.w3.org/TR/DOM-Level-3-Core/references.html#HTML40 HTML 4.01}).
+       * @since DOM Level 2.
+       * @see https://developer.mozilla.org/en-US/docs/Web/API/DOMImplementation/createDocumentType
+       *      MDN
+       * @see https://dom.spec.whatwg.org/#dom-domimplementation-createdocumenttype DOM Living
+       *      Standard
+       * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#Level-3-Core-DOM-createDocType DOM
+       *      Level 3 Core
+       * @see https://www.w3.org/TR/DOM-Level-2-Core/core.html#Level-2-Core-DOM-createDocType DOM
+       *      Level 2 Core
+       * @see https://github.com/xmldom/xmldom/blob/master/CHANGELOG.md#050
+       * @see https://www.w3.org/TR/DOM-Level-2-Core/#core-ID-Core-DocType-internalSubset
+       * @prettierignore
        */
-      createDocumentType: function(qualifiedName, publicId, systemId) {
-        var node = new DocumentType();
+      createDocumentType: function(qualifiedName, publicId, systemId, internalSubset) {
+        validateQualifiedName(qualifiedName);
+        var node = new DocumentType(PDC);
         node.name = qualifiedName;
         node.nodeName = qualifiedName;
         node.publicId = publicId || "";
         node.systemId = systemId || "";
+        node.internalSubset = internalSubset || "";
+        node.childNodes = new NodeList();
         return node;
+      },
+      /**
+       * Returns an HTML document, that might already have a basic DOM structure.
+       *
+       * __It behaves slightly different from the description in the living standard__:
+       * - If the first argument is `false` no initial nodes are added (steps 3-7 in the specs are
+       * omitted)
+       * - `encoding`, `mode`, `origin`, `url` fields are currently not declared.
+       *
+       * @param {string | false} [title]
+       * A string containing the title to give the new HTML document.
+       * @returns {Document}
+       * The HTML document.
+       * @since WHATWG Living Standard.
+       * @see {@link #createDocument}
+       * @see https://dom.spec.whatwg.org/#dom-domimplementation-createhtmldocument
+       * @see https://dom.spec.whatwg.org/#html-document
+       */
+      createHTMLDocument: function(title) {
+        var doc = new Document(PDC, { contentType: MIME_TYPE.HTML });
+        doc.implementation = this;
+        doc.childNodes = new NodeList();
+        if (title !== false) {
+          doc.doctype = this.createDocumentType("html");
+          doc.doctype.ownerDocument = doc;
+          doc.appendChild(doc.doctype);
+          var htmlNode = doc.createElement("html");
+          doc.appendChild(htmlNode);
+          var headNode = doc.createElement("head");
+          htmlNode.appendChild(headNode);
+          if (typeof title === "string") {
+            var titleNode = doc.createElement("title");
+            titleNode.appendChild(doc.createTextNode(title));
+            headNode.appendChild(titleNode);
+          }
+          htmlNode.appendChild(doc.createElement("body"));
+        }
+        return doc;
       }
     };
-    function Node() {
+    function Node(symbol) {
+      checkSymbol(symbol);
     }
     Node.prototype = {
+      /**
+       * The first child of this node.
+       *
+       * @type {Node | null}
+       */
       firstChild: null,
+      /**
+       * The last child of this node.
+       *
+       * @type {Node | null}
+       */
       lastChild: null,
+      /**
+       * The previous sibling of this node.
+       *
+       * @type {Node | null}
+       */
       previousSibling: null,
+      /**
+       * The next sibling of this node.
+       *
+       * @type {Node | null}
+       */
       nextSibling: null,
-      attributes: null,
+      /**
+       * The parent node of this node.
+       *
+       * @type {Node | null}
+       */
       parentNode: null,
+      /**
+       * The parent element of this node.
+       *
+       * @type {Element | null}
+       */
+      get parentElement() {
+        return this.parentNode && this.parentNode.nodeType === this.ELEMENT_NODE ? this.parentNode : null;
+      },
+      /**
+       * The child nodes of this node.
+       *
+       * @type {NodeList}
+       */
       childNodes: null,
+      /**
+       * The document object associated with this node.
+       *
+       * @type {Document | null}
+       */
       ownerDocument: null,
+      /**
+       * The value of this node.
+       *
+       * @type {string | null}
+       */
       nodeValue: null,
+      /**
+       * The namespace URI of this node.
+       *
+       * @type {string | null}
+       */
       namespaceURI: null,
+      /**
+       * The prefix of the namespace for this node.
+       *
+       * @type {string | null}
+       */
       prefix: null,
+      /**
+       * The local part of the qualified name of this node.
+       *
+       * @type {string | null}
+       */
       localName: null,
-      // Modified in DOM Level 2:
+      /**
+       * The baseURI is currently always `about:blank`,
+       * since that's what happens when you create a document from scratch.
+       *
+       * @type {'about:blank'}
+       */
+      baseURI: "about:blank",
+      /**
+       * Is true if this node is part of a document.
+       *
+       * @type {boolean}
+       */
+      get isConnected() {
+        var rootNode = this.getRootNode();
+        return rootNode && rootNode.nodeType === rootNode.DOCUMENT_NODE;
+      },
+      /**
+       * Checks whether `other` is an inclusive descendant of this node.
+       *
+       * @param {Node | null | undefined} other
+       * The node to check.
+       * @returns {boolean}
+       * True if `other` is an inclusive descendant of this node; false otherwise.
+       * @see https://dom.spec.whatwg.org/#dom-node-contains
+       */
+      contains: function(other) {
+        if (!other) return false;
+        var parent = other;
+        do {
+          if (this === parent) return true;
+          parent = parent.parentNode;
+        } while (parent);
+        return false;
+      },
+      /**
+       * @typedef GetRootNodeOptions
+       * @property {boolean} [composed=false]
+       */
+      /**
+       * Searches for the root node of this node.
+       *
+       * **This behavior is slightly different from the in the specs**:
+       * - ignores `options.composed`, since `ShadowRoot`s are unsupported, always returns root.
+       *
+       * @param {GetRootNodeOptions} [options]
+       * @returns {Node}
+       * Root node.
+       * @see https://dom.spec.whatwg.org/#dom-node-getrootnode
+       * @see https://dom.spec.whatwg.org/#concept-shadow-including-root
+       */
+      getRootNode: function(options) {
+        var parent = this;
+        do {
+          if (!parent.parentNode) {
+            return parent;
+          }
+          parent = parent.parentNode;
+        } while (parent);
+      },
+      /**
+       * Checks whether the given node is equal to this node.
+       *
+       * Two nodes are equal when they have the same type, defining characteristics (for the type),
+       * and the same childNodes. The comparison is iterative to avoid stack overflows on
+       * deeply-nested trees. Attribute nodes of each Element pair are also pushed onto the stack
+       * and compared the same way.
+       *
+       * @param {Node} [otherNode]
+       * @returns {boolean}
+       * @see https://dom.spec.whatwg.org/#concept-node-equals
+       * @see ../docs/walk-dom.md.
+       */
+      isEqualNode: function(otherNode) {
+        if (!otherNode) return false;
+        var stack = [{ node: this, other: otherNode }];
+        while (stack.length > 0) {
+          var pair = stack.pop();
+          var node = pair.node;
+          var other = pair.other;
+          if (node.nodeType !== other.nodeType) return false;
+          switch (node.nodeType) {
+            case node.DOCUMENT_TYPE_NODE:
+              if (node.name !== other.name) return false;
+              if (node.publicId !== other.publicId) return false;
+              if (node.systemId !== other.systemId) return false;
+              break;
+            case node.ELEMENT_NODE:
+              if (node.namespaceURI !== other.namespaceURI) return false;
+              if (node.prefix !== other.prefix) return false;
+              if (node.localName !== other.localName) return false;
+              if (node.attributes.length !== other.attributes.length) return false;
+              for (var i = 0; i < node.attributes.length; i++) {
+                var attr = node.attributes.item(i);
+                var otherAttr = other.getAttributeNodeNS(attr.namespaceURI, attr.localName);
+                if (!otherAttr) return false;
+                stack.push({ node: attr, other: otherAttr });
+              }
+              break;
+            case node.ATTRIBUTE_NODE:
+              if (node.namespaceURI !== other.namespaceURI) return false;
+              if (node.localName !== other.localName) return false;
+              if (node.value !== other.value) return false;
+              break;
+            case node.PROCESSING_INSTRUCTION_NODE:
+              if (node.target !== other.target || node.data !== other.data) return false;
+              break;
+            case node.TEXT_NODE:
+            case node.CDATA_SECTION_NODE:
+            case node.COMMENT_NODE:
+              if (node.data !== other.data) return false;
+              break;
+          }
+          if (node.childNodes.length !== other.childNodes.length) return false;
+          for (var i = node.childNodes.length - 1; i >= 0; i--) {
+            stack.push({ node: node.childNodes[i], other: other.childNodes[i] });
+          }
+        }
+        return true;
+      },
+      /**
+       * Checks whether or not the given node is this node.
+       *
+       * @param {Node} [otherNode]
+       */
+      isSameNode: function(otherNode) {
+        return this === otherNode;
+      },
+      /**
+       * Inserts a node before a reference node as a child of this node.
+       *
+       * @param {Node} newChild
+       * The new child node to be inserted.
+       * @param {Node | null} refChild
+       * The reference node before which newChild will be inserted.
+       * @returns {Node}
+       * The new child node successfully inserted.
+       * @throws {DOMException}
+       * Throws a DOMException if inserting the node would result in a DOM tree that is not
+       * well-formed, or if `child` is provided but is not a child of `parent`.
+       * See {@link _insertBefore} for more details.
+       * @since Modified in DOM L2
+       */
       insertBefore: function(newChild, refChild) {
         return _insertBefore(this, newChild, refChild);
       },
+      /**
+       * Replaces an old child node with a new child node within this node.
+       *
+       * @param {Node} newChild
+       * The new node that is to replace the old node.
+       * If it already exists in the DOM, it is removed from its original position.
+       * @param {Node} oldChild
+       * The existing child node to be replaced.
+       * @returns {Node}
+       * Returns the replaced child node.
+       * @throws {DOMException}
+       * Throws a DOMException if replacing the node would result in a DOM tree that is not
+       * well-formed, or if `oldChild` is not a child of `this`.
+       * This can also occur if the pre-replacement validity assertion fails.
+       * See {@link _insertBefore}, {@link Node.removeChild}, and
+       * {@link assertPreReplacementValidityInDocument} for more details.
+       * @see https://dom.spec.whatwg.org/#concept-node-replace
+       */
       replaceChild: function(newChild, oldChild) {
         _insertBefore(this, newChild, oldChild, assertPreReplacementValidityInDocument);
         if (oldChild) {
           this.removeChild(oldChild);
         }
       },
+      /**
+       * Removes an existing child node from this node.
+       *
+       * @param {Node} oldChild
+       * The child node to be removed.
+       * @returns {Node}
+       * Returns the removed child node.
+       * @throws {DOMException}
+       * Throws a DOMException if `oldChild` is not a child of `this`.
+       * See {@link _removeChild} for more details.
+       */
       removeChild: function(oldChild) {
         return _removeChild(this, oldChild);
       },
+      /**
+       * Appends a child node to this node.
+       *
+       * @param {Node} newChild
+       * The child node to be appended to this node.
+       * If it already exists in the DOM, it is removed from its original position.
+       * @returns {Node}
+       * Returns the appended child node.
+       * @throws {DOMException}
+       * Throws a DOMException if appending the node would result in a DOM tree that is not
+       * well-formed, or if `newChild` is not a valid Node.
+       * See {@link insertBefore} for more details.
+       */
       appendChild: function(newChild) {
         return this.insertBefore(newChild, null);
       },
+      /**
+       * Determines whether this node has any child nodes.
+       *
+       * @returns {boolean}
+       * Returns true if this node has any child nodes, and false otherwise.
+       */
       hasChildNodes: function() {
         return this.firstChild != null;
       },
+      /**
+       * Creates a copy of the calling node.
+       *
+       * @param {boolean} deep
+       * If true, the contents of the node are recursively copied.
+       * If false, only the node itself (and its attributes, if it is an element) are copied.
+       * @returns {Node}
+       * Returns the newly created copy of the node.
+       * @throws {DOMException}
+       * May throw a DOMException if operations within {@link Element#setAttributeNode} or
+       * {@link Node#appendChild} (which are potentially invoked in this method) do not meet their
+       * specific constraints.
+       * @see {@link cloneNode}
+       */
       cloneNode: function(deep) {
         return cloneNode(this.ownerDocument || this, this, deep);
       },
-      // Modified in DOM Level 2:
       /**
        * Puts the specified node and all of its subtree into a "normalized" form. In a normalized
        * subtree, no text nodes in the subtree are empty and there are no adjacent text nodes.
@@ -21850,12 +22867,13 @@ var require_dom = __commonJS({
        * is `TEXT_NODE`) into a single node with the combined data. It also removes any empty text
        * nodes.
        *
-       * This method iteratively traverses all child nodes to normalize all descendant nodes within
+       * This method iterativly traverses all child nodes to normalize all descendent nodes within
        * the subtree.
        *
        * @throws {DOMException}
        * May throw a DOMException if operations within removeChild or appendData (which are
        * potentially invoked in this method) do not meet their specific constraints.
+       * @since Modified in DOM Level 2
        * @see {@link Node.removeChild}
        * @see {@link CharacterData.appendData}
        * @see ../docs/walk-dom.md.
@@ -21866,7 +22884,7 @@ var require_dom = __commonJS({
             var child2 = node.firstChild;
             while (child2) {
               var next = child2.nextSibling;
-              if (next !== null && next.nodeType === TEXT_NODE && child2.nodeType === TEXT_NODE) {
+              if (next !== null && next.nodeType === TEXT_NODE2 && child2.nodeType === TEXT_NODE2) {
                 node.removeChild(next);
                 child2.appendData(next.data);
               } else {
@@ -21877,27 +22895,42 @@ var require_dom = __commonJS({
           }
         });
       },
-      // Introduced in DOM Level 2:
+      /**
+       * Checks whether the DOM implementation implements a specific feature and its version.
+       *
+       * @deprecated
+       * Since `DOMImplementation.hasFeature` is deprecated and always returns true.
+       * @param {string} feature
+       * The package name of the feature to test. This is the same name that can be passed to the
+       * method `hasFeature` on `DOMImplementation`.
+       * @param {string} version
+       * This is the version number of the package name to test.
+       * @returns {boolean}
+       * Returns true in all cases in the current implementation.
+       * @since Introduced in DOM Level 2
+       * @see {@link DOMImplementation.hasFeature}
+       */
       isSupported: function(feature, version) {
         return this.ownerDocument.implementation.hasFeature(feature, version);
-      },
-      // Introduced in DOM Level 2:
-      hasAttributes: function() {
-        return this.attributes.length > 0;
       },
       /**
        * Look up the prefix associated to the given namespace URI, starting from this node.
        * **The default namespace declarations are ignored by this method.**
        * See Namespace Prefix Lookup for details on the algorithm used by this method.
        *
-       * _Note: The implementation seems to be incomplete when compared to the algorithm described in the specs._
+       * **This behavior is different from the in the specs**:
+       * - no node type specific handling
+       * - uses the internal attribute _nsMap for resolving namespaces that is updated when changing attributes
        *
        * @param {string | null} namespaceURI
+       * The namespace URI for which to find the associated prefix.
        * @returns {string | null}
+       * The associated prefix, if found; otherwise, null.
        * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-lookupNamespacePrefix
        * @see https://www.w3.org/TR/DOM-Level-3-Core/namespaces-algorithms.html#lookupNamespacePrefixAlgo
        * @see https://dom.spec.whatwg.org/#dom-node-lookupprefix
        * @see https://github.com/xmldom/xmldom/issues/322
+       * @prettierignore
        */
       lookupPrefix: function(namespaceURI) {
         var el = this;
@@ -21905,7 +22938,7 @@ var require_dom = __commonJS({
           var map = el._nsMap;
           if (map) {
             for (var n in map) {
-              if (Object.prototype.hasOwnProperty.call(map, n) && map[n] === namespaceURI) {
+              if (hasOwn(map, n) && map[n] === namespaceURI) {
                 return n;
               }
             }
@@ -21914,13 +22947,29 @@ var require_dom = __commonJS({
         }
         return null;
       },
-      // Introduced in DOM Level 3:
+      /**
+       * This function is used to look up the namespace URI associated with the given prefix,
+       * starting from this node.
+       *
+       * **This behavior is different from the in the specs**:
+       * - no node type specific handling
+       * - uses the internal attribute _nsMap for resolving namespaces that is updated when changing attributes
+       *
+       * @param {string | null} prefix
+       * The prefix for which to find the associated namespace URI.
+       * @returns {string | null}
+       * The associated namespace URI, if found; otherwise, null.
+       * @since DOM Level 3
+       * @see https://dom.spec.whatwg.org/#dom-node-lookupnamespaceuri
+       * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-lookupNamespaceURI
+       * @prettierignore
+       */
       lookupNamespaceURI: function(prefix) {
         var el = this;
         while (el) {
           var map = el._nsMap;
           if (map) {
-            if (Object.prototype.hasOwnProperty.call(map, prefix)) {
+            if (hasOwn(map, prefix)) {
               return map[prefix];
             }
           }
@@ -21928,10 +22977,104 @@ var require_dom = __commonJS({
         }
         return null;
       },
-      // Introduced in DOM Level 3:
+      /**
+       * Determines whether the given namespace URI is the default namespace.
+       *
+       * The function works by looking up the prefix associated with the given namespace URI. If no
+       * prefix is found (i.e., the namespace URI is not registered in the namespace map of this
+       * node or any of its ancestors), it returns `true`, implying the namespace URI is considered
+       * the default.
+       *
+       * **This behavior is different from the in the specs**:
+       * - no node type specific handling
+       * - uses the internal attribute _nsMap for resolving namespaces that is updated when changing attributes
+       *
+       * @param {string | null} namespaceURI
+       * The namespace URI to be checked.
+       * @returns {boolean}
+       * Returns true if the given namespace URI is the default namespace, false otherwise.
+       * @since DOM Level 3
+       * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-isDefaultNamespace
+       * @see https://dom.spec.whatwg.org/#dom-node-isdefaultnamespace
+       * @prettierignore
+       */
       isDefaultNamespace: function(namespaceURI) {
         var prefix = this.lookupPrefix(namespaceURI);
         return prefix == null;
+      },
+      /**
+       * Compares the reference node with a node with regard to their position in the document and
+       * according to the document order.
+       *
+       * @param {Node} other
+       * The node to compare the reference node to.
+       * @returns {number}
+       * Returns how the node is positioned relatively to the reference node according to the
+       * bitmask. 0 if reference node and given node are the same.
+       * @since DOM Level 3
+       * @see https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#Node3-compare
+       * @see https://dom.spec.whatwg.org/#dom-node-comparedocumentposition
+       */
+      compareDocumentPosition: function(other) {
+        if (this === other) return 0;
+        var node1 = other;
+        var node2 = this;
+        var attr1 = null;
+        var attr2 = null;
+        if (node1 instanceof Attr) {
+          attr1 = node1;
+          node1 = attr1.ownerElement;
+        }
+        if (node2 instanceof Attr) {
+          attr2 = node2;
+          node2 = attr2.ownerElement;
+          if (attr1 && node1 && node2 === node1) {
+            for (var i = 0, attr; attr = node2.attributes[i]; i++) {
+              if (attr === attr1)
+                return DocumentPosition.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC + DocumentPosition.DOCUMENT_POSITION_PRECEDING;
+              if (attr === attr2)
+                return DocumentPosition.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC + DocumentPosition.DOCUMENT_POSITION_FOLLOWING;
+            }
+          }
+        }
+        if (!node1 || !node2 || node2.ownerDocument !== node1.ownerDocument) {
+          return DocumentPosition.DOCUMENT_POSITION_DISCONNECTED + DocumentPosition.DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC + (docGUID(node2.ownerDocument) > docGUID(node1.ownerDocument) ? DocumentPosition.DOCUMENT_POSITION_FOLLOWING : DocumentPosition.DOCUMENT_POSITION_PRECEDING);
+        }
+        if (attr2 && node1 === node2) {
+          return DocumentPosition.DOCUMENT_POSITION_CONTAINS + DocumentPosition.DOCUMENT_POSITION_PRECEDING;
+        }
+        if (attr1 && node1 === node2) {
+          return DocumentPosition.DOCUMENT_POSITION_CONTAINED_BY + DocumentPosition.DOCUMENT_POSITION_FOLLOWING;
+        }
+        var chain1 = [];
+        var ancestor1 = node1.parentNode;
+        while (ancestor1) {
+          if (!attr2 && ancestor1 === node2) {
+            return DocumentPosition.DOCUMENT_POSITION_CONTAINED_BY + DocumentPosition.DOCUMENT_POSITION_FOLLOWING;
+          }
+          chain1.push(ancestor1);
+          ancestor1 = ancestor1.parentNode;
+        }
+        chain1.reverse();
+        var chain2 = [];
+        var ancestor2 = node2.parentNode;
+        while (ancestor2) {
+          if (!attr1 && ancestor2 === node1) {
+            return DocumentPosition.DOCUMENT_POSITION_CONTAINS + DocumentPosition.DOCUMENT_POSITION_PRECEDING;
+          }
+          chain2.push(ancestor2);
+          ancestor2 = ancestor2.parentNode;
+        }
+        chain2.reverse();
+        var ca = commonAncestor(chain1, chain2);
+        for (var n in ca.childNodes) {
+          var child2 = ca.childNodes[n];
+          if (child2 === node2) return DocumentPosition.DOCUMENT_POSITION_FOLLOWING;
+          if (child2 === node1) return DocumentPosition.DOCUMENT_POSITION_PRECEDING;
+          if (chain2.indexOf(child2) >= 0) return DocumentPosition.DOCUMENT_POSITION_FOLLOWING;
+          if (chain1.indexOf(child2) >= 0) return DocumentPosition.DOCUMENT_POSITION_PRECEDING;
+        }
+        return 0;
       }
     };
     function _xmlEncoder(c) {
@@ -21939,10 +23082,14 @@ var require_dom = __commonJS({
     }
     copy(NodeType, Node);
     copy(NodeType, Node.prototype);
+    copy(DocumentPosition, Node);
+    copy(DocumentPosition, Node.prototype);
     function _visitNode(node, callback) {
-      return walkDOM(node, null, { enter: function(n) {
-        return callback(n) ? walkDOM.STOP : true;
-      } }) === walkDOM.STOP;
+      walkDOM(node, null, {
+        enter: function(n) {
+          return callback(n) ? walkDOM.STOP : true;
+        }
+      });
     }
     function walkDOM(node, context, callbacks) {
       var stack = [{ node, context, phase: walkDOM.ENTER }];
@@ -21972,8 +23119,12 @@ var require_dom = __commonJS({
     walkDOM.STOP = /* @__PURE__ */ Symbol("walkDOM.STOP");
     walkDOM.ENTER = 0;
     walkDOM.EXIT = 1;
-    function Document() {
+    function Document(symbol, options) {
+      checkSymbol(symbol);
+      var opt = options || {};
       this.ownerDocument = this;
+      this.contentType = opt.contentType || MIME_TYPE.XML_APPLICATION;
+      this.type = isHTMLMimeType(this.contentType) ? "html" : "xml";
     }
     function _onAddAttribute(doc, el, newAttr) {
       doc && doc._inc++;
@@ -21989,48 +23140,51 @@ var require_dom = __commonJS({
         delete el._nsMap[newAttr.prefix ? newAttr.localName : ""];
       }
     }
-    function _onUpdateChild(doc, el, newChild) {
+    function _onUpdateChild(doc, parent, newChild) {
       if (doc && doc._inc) {
         doc._inc++;
-        var cs = el.childNodes;
-        if (newChild) {
-          cs[cs.length++] = newChild;
+        var childNodes = parent.childNodes;
+        if (newChild && !newChild.nextSibling) {
+          childNodes[childNodes.length++] = newChild;
         } else {
-          var child2 = el.firstChild;
+          var child2 = parent.firstChild;
           var i = 0;
           while (child2) {
-            cs[i++] = child2;
+            childNodes[i++] = child2;
             child2 = child2.nextSibling;
           }
-          cs.length = i;
-          delete cs[cs.length];
+          childNodes.length = i;
+          delete childNodes[childNodes.length];
         }
       }
     }
     function _removeChild(parentNode, child2) {
-      var previous = child2.previousSibling;
-      var next = child2.nextSibling;
-      if (previous) {
-        previous.nextSibling = next;
-      } else {
-        parentNode.firstChild = next;
+      if (parentNode !== child2.parentNode) {
+        throw new DOMException2(DOMException2.NOT_FOUND_ERR, "child's parent is not parent");
       }
-      if (next) {
-        next.previousSibling = previous;
+      var oldPreviousSibling = child2.previousSibling;
+      var oldNextSibling = child2.nextSibling;
+      if (oldPreviousSibling) {
+        oldPreviousSibling.nextSibling = oldNextSibling;
       } else {
-        parentNode.lastChild = previous;
+        parentNode.firstChild = oldNextSibling;
       }
+      if (oldNextSibling) {
+        oldNextSibling.previousSibling = oldPreviousSibling;
+      } else {
+        parentNode.lastChild = oldPreviousSibling;
+      }
+      _onUpdateChild(parentNode.ownerDocument, parentNode);
       child2.parentNode = null;
       child2.previousSibling = null;
       child2.nextSibling = null;
-      _onUpdateChild(parentNode.ownerDocument, parentNode);
       return child2;
     }
     function hasValidParentNodeType(node) {
       return node && (node.nodeType === Node.DOCUMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE || node.nodeType === Node.ELEMENT_NODE);
     }
     function hasInsertableNodeType(node) {
-      return node && (isElementNode(node) || isTextNode(node) || isDocTypeNode(node) || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE || node.nodeType === Node.COMMENT_NODE || node.nodeType === Node.PROCESSING_INSTRUCTION_NODE);
+      return node && (node.nodeType === Node.CDATA_SECTION_NODE || node.nodeType === Node.COMMENT_NODE || node.nodeType === Node.DOCUMENT_FRAGMENT_NODE || node.nodeType === Node.DOCUMENT_TYPE_NODE || node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.PROCESSING_INSTRUCTION_NODE || node.nodeType === Node.TEXT_NODE);
     }
     function isDocTypeNode(node) {
       return node && node.nodeType === Node.DOCUMENT_TYPE_NODE;
@@ -22062,10 +23216,10 @@ var require_dom = __commonJS({
     }
     function assertPreInsertionValidity1to5(parent, node, child2) {
       if (!hasValidParentNodeType(parent)) {
-        throw new DOMException2(HIERARCHY_REQUEST_ERR, "Unexpected parent node type " + parent.nodeType);
+        throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Unexpected parent node type " + parent.nodeType);
       }
       if (child2 && child2.parentNode !== parent) {
-        throw new DOMException2(NOT_FOUND_ERR, "child not in parent");
+        throw new DOMException2(DOMException2.NOT_FOUND_ERR, "child not in parent");
       }
       if (
         // 4. If `node` is not a DocumentFragment, DocumentType, Element, or CharacterData node, then throw a "HierarchyRequestError" DOMException.
@@ -22076,7 +23230,7 @@ var require_dom = __commonJS({
         isDocTypeNode(node) && parent.nodeType !== Node.DOCUMENT_NODE
       ) {
         throw new DOMException2(
-          HIERARCHY_REQUEST_ERR,
+          DOMException2.HIERARCHY_REQUEST_ERR,
           "Unexpected node type " + node.nodeType + " for parent node type " + parent.nodeType
         );
       }
@@ -22087,27 +23241,27 @@ var require_dom = __commonJS({
       if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
         var nodeChildElements = nodeChildNodes.filter(isElementNode);
         if (nodeChildElements.length > 1 || find(nodeChildNodes, isTextNode)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "More than one element or text in fragment");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "More than one element or text in fragment");
         }
         if (nodeChildElements.length === 1 && !isElementInsertionPossible(parent, child2)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Element in fragment can not be inserted before doctype");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Element in fragment can not be inserted before doctype");
         }
       }
       if (isElementNode(node)) {
         if (!isElementInsertionPossible(parent, child2)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Only one element can be added and only after doctype");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Only one element can be added and only after doctype");
         }
       }
       if (isDocTypeNode(node)) {
         if (find(parentChildNodes, isDocTypeNode)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Only one doctype is allowed");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Only one doctype is allowed");
         }
         var parentElementChild = find(parentChildNodes, isElementNode);
         if (child2 && parentChildNodes.indexOf(parentElementChild) < parentChildNodes.indexOf(child2)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Doctype can only be inserted before an element");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Doctype can only be inserted before an element");
         }
         if (!child2 && parentElementChild) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Doctype can not be appended since element is present");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Doctype can not be appended since element is present");
         }
       }
     }
@@ -22117,28 +23271,27 @@ var require_dom = __commonJS({
       if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
         var nodeChildElements = nodeChildNodes.filter(isElementNode);
         if (nodeChildElements.length > 1 || find(nodeChildNodes, isTextNode)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "More than one element or text in fragment");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "More than one element or text in fragment");
         }
         if (nodeChildElements.length === 1 && !isElementReplacementPossible(parent, child2)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Element in fragment can not be inserted before doctype");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Element in fragment can not be inserted before doctype");
         }
       }
       if (isElementNode(node)) {
         if (!isElementReplacementPossible(parent, child2)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Only one element can be added and only after doctype");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Only one element can be added and only after doctype");
         }
       }
       if (isDocTypeNode(node)) {
-        let hasDoctypeChildThatIsNotChild2 = function(node2) {
+        let hasDoctypeChildThatIsNotChild = function(node2) {
           return isDocTypeNode(node2) && node2 !== child2;
         };
-        var hasDoctypeChildThatIsNotChild = hasDoctypeChildThatIsNotChild2;
-        if (find(parentChildNodes, hasDoctypeChildThatIsNotChild2)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Only one doctype is allowed");
+        if (find(parentChildNodes, hasDoctypeChildThatIsNotChild)) {
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Only one doctype is allowed");
         }
         var parentElementChild = find(parentChildNodes, isElementNode);
         if (child2 && parentChildNodes.indexOf(parentElementChild) < parentChildNodes.indexOf(child2)) {
-          throw new DOMException2(HIERARCHY_REQUEST_ERR, "Doctype can only be inserted before an element");
+          throw new DOMException2(DOMException2.HIERARCHY_REQUEST_ERR, "Doctype can only be inserted before an element");
         }
       }
     }
@@ -22175,67 +23328,34 @@ var require_dom = __commonJS({
       }
       do {
         newFirst.parentNode = parent;
-        var targetDoc = parent.ownerDocument || parent;
-        _updateOwnerDocument(newFirst, targetDoc);
       } while (newFirst !== newLast && (newFirst = newFirst.nextSibling));
-      _onUpdateChild(parent.ownerDocument || parent, parent);
+      _onUpdateChild(parent.ownerDocument || parent, parent, node);
       if (node.nodeType == DOCUMENT_FRAGMENT_NODE) {
         node.firstChild = node.lastChild = null;
       }
       return node;
     }
-    function _updateOwnerDocument(node, newOwnerDocument) {
-      if (node.ownerDocument === newOwnerDocument) {
-        return;
-      }
-      node.ownerDocument = newOwnerDocument;
-      if (node.nodeType === ELEMENT_NODE && node.attributes) {
-        for (var i = 0; i < node.attributes.length; i++) {
-          var attr = node.attributes.item(i);
-          if (attr) {
-            attr.ownerDocument = newOwnerDocument;
-          }
-        }
-      }
-      var child2 = node.firstChild;
-      while (child2) {
-        _updateOwnerDocument(child2, newOwnerDocument);
-        child2 = child2.nextSibling;
-      }
-    }
-    function _appendSingleChild(parentNode, newChild) {
-      if (newChild.parentNode) {
-        newChild.parentNode.removeChild(newChild);
-      }
-      newChild.parentNode = parentNode;
-      newChild.previousSibling = parentNode.lastChild;
-      newChild.nextSibling = null;
-      if (newChild.previousSibling) {
-        newChild.previousSibling.nextSibling = newChild;
-      } else {
-        parentNode.firstChild = newChild;
-      }
-      parentNode.lastChild = newChild;
-      _onUpdateChild(parentNode.ownerDocument, parentNode, newChild);
-      var targetDoc = parentNode.ownerDocument || parentNode;
-      _updateOwnerDocument(newChild, targetDoc);
-      return newChild;
-    }
     Document.prototype = {
-      //implementation : null,
+      /**
+       * The implementation that created this document.
+       *
+       * @type DOMImplementation
+       * @readonly
+       */
+      implementation: null,
       nodeName: "#document",
       nodeType: DOCUMENT_NODE,
       /**
        * The DocumentType node of the document.
        *
-       * @readonly
        * @type DocumentType
+       * @readonly
        */
       doctype: null,
       documentElement: null,
       _inc: 1,
       insertBefore: function(newChild, refChild) {
-        if (newChild.nodeType == DOCUMENT_FRAGMENT_NODE) {
+        if (newChild.nodeType === DOCUMENT_FRAGMENT_NODE) {
           var child2 = newChild.firstChild;
           while (child2) {
             var next = child2.nextSibling;
@@ -22245,21 +23365,22 @@ var require_dom = __commonJS({
           return newChild;
         }
         _insertBefore(this, newChild, refChild);
-        _updateOwnerDocument(newChild, this);
+        newChild.ownerDocument = this;
         if (this.documentElement === null && newChild.nodeType === ELEMENT_NODE) {
           this.documentElement = newChild;
         }
         return newChild;
       },
       removeChild: function(oldChild) {
-        if (this.documentElement == oldChild) {
+        var removed = _removeChild(this, oldChild);
+        if (removed === this.documentElement) {
           this.documentElement = null;
         }
-        return _removeChild(this, oldChild);
+        return removed;
       },
       replaceChild: function(newChild, oldChild) {
         _insertBefore(this, newChild, oldChild, assertPreReplacementValidityInDocument);
-        _updateOwnerDocument(newChild, this);
+        newChild.ownerDocument = this;
         if (oldChild) {
           this.removeChild(oldChild);
         }
@@ -22267,7 +23388,20 @@ var require_dom = __commonJS({
           this.documentElement = newChild;
         }
       },
-      // Introduced in DOM Level 2:
+      /**
+       * Imports a node from another document into this document, creating a new copy owned by this
+       * document. The source node and its subtree are not modified.
+       *
+       * @param {Node} importedNode
+       * The node to import.
+       * @param {boolean} deep
+       * If true, the contents of the node are recursively imported.
+       * If false, only the node itself (and its attributes, if it is an element) are imported.
+       * @returns {Node}
+       * Returns the newly created import of the node.
+       * @see {@link importNode}
+       * @see {@link https://dom.spec.whatwg.org/#dom-document-importnode}
+       */
       importNode: function(importedNode, deep) {
         return importNode(this, importedNode, deep);
       },
@@ -22285,50 +23419,32 @@ var require_dom = __commonJS({
         return rtv;
       },
       /**
-       * The `getElementsByClassName` method of `Document` interface returns an array-like object
-       * of all child elements which have **all** of the given class name(s).
+       * Creates a new `Element` that is owned by this `Document`.
+       * In HTML Documents `localName` is the lower cased `tagName`,
+       * otherwise no transformation is being applied.
+       * When `contentType` implies the HTML namespace, it will be set as `namespaceURI`.
        *
-       * Returns an empty list if `classeNames` is an empty string or only contains HTML white space characters.
+       * __This implementation differs from the specification:__ - The provided name is not checked
+       * against the `Name` production,
+       * so no related error will be thrown.
+       * - There is no interface `HTMLElement`, it is always an `Element`.
+       * - There is no support for a second argument to indicate using custom elements.
        *
-       *
-       * Warning: This is a live LiveNodeList.
-       * Changes in the DOM will reflect in the array as the changes occur.
-       * If an element selected by this array no longer qualifies for the selector,
-       * it will automatically be removed. Be aware of this for iteration purposes.
-       *
-       * @param {string} classNames is a string representing the class name(s) to match; multiple class names are separated by (ASCII-)whitespace
-       *
-       * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementsByClassName
-       * @see https://dom.spec.whatwg.org/#concept-getelementsbyclassname
+       * @param {string} tagName
+       * @returns {Element}
+       * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement
+       * @see https://dom.spec.whatwg.org/#dom-document-createelement
+       * @see https://dom.spec.whatwg.org/#concept-create-element
        */
-      getElementsByClassName: function(classNames) {
-        var classNamesSet = toOrderedSet(classNames);
-        return new LiveNodeList(this, function(base) {
-          var ls = [];
-          if (classNamesSet.length > 0) {
-            _visitNode(base.documentElement, function(node) {
-              if (node !== base && node.nodeType === ELEMENT_NODE) {
-                var nodeClassNames = node.getAttribute("class");
-                if (nodeClassNames) {
-                  var matches = classNames === nodeClassNames;
-                  if (!matches) {
-                    var nodeClassNamesSet = toOrderedSet(nodeClassNames);
-                    matches = classNamesSet.every(arrayIncludes(nodeClassNamesSet));
-                  }
-                  if (matches) {
-                    ls.push(node);
-                  }
-                }
-              }
-            });
-          }
-          return ls;
-        });
-      },
-      //document factory method:
       createElement: function(tagName) {
-        var node = new Element();
+        var node = new Element(PDC);
         node.ownerDocument = this;
+        if (this.type === "html") {
+          tagName = tagName.toLowerCase();
+        }
+        if (hasDefaultHTMLNamespace(this.contentType)) {
+          node.namespaceURI = NAMESPACE.HTML;
+        }
         node.nodeName = tagName;
         node.tagName = tagName;
         node.localName = tagName;
@@ -22337,54 +23453,81 @@ var require_dom = __commonJS({
         attrs._ownerElement = node;
         return node;
       },
+      /**
+       * @returns {DocumentFragment}
+       */
       createDocumentFragment: function() {
-        var node = new DocumentFragment();
+        var node = new DocumentFragment(PDC);
         node.ownerDocument = this;
         node.childNodes = new NodeList();
         return node;
       },
+      /**
+       * @param {string} data
+       * @returns {Text}
+       */
       createTextNode: function(data) {
-        var node = new Text();
+        var node = new Text(PDC);
         node.ownerDocument = this;
+        node.childNodes = new NodeList();
         node.appendData(data);
         return node;
       },
+      /**
+       * @param {string} data
+       * @returns {Comment}
+       * @see https://dom.spec.whatwg.org/#dom-document-createcomment
+       * @see https://www.w3.org/TR/xml/#NT-Comment XML 1.0 production [15]
+       * @see https://www.w3.org/TR/DOM-Parsing/#dfn-concept-serialize-xml §3.2.1.3
+       *
+       *      Note: no validation is performed at creation time. When the resulting document is
+       *      serialized with `requireWellFormed: true`, the serializer throws `InvalidStateError`
+       *      if the comment data contains `--` anywhere, ends with `-`, or contains characters
+       *      outside the XML Char production (W3C DOM Parsing §3.2.1.3). Without that option the
+       *      data is emitted verbatim.
+       */
       createComment: function(data) {
-        var node = new Comment();
+        var node = new Comment(PDC);
         node.ownerDocument = this;
+        node.childNodes = new NodeList();
         node.appendData(data);
         return node;
       },
       /**
        * Returns a new CDATASection node whose data is `data`.
        *
-       * __This implementation differs from the specification:__
-       * - calling this method on an HTML document does not throw `NotSupportedError`.
+       * __This implementation differs from the specification:__ - calling this method on an HTML
+       * document does not throw `NotSupportedError`.
        *
        * @param {string} data
        * @returns {CDATASection}
-       * @throws DOMException with code `INVALID_CHARACTER_ERR` if `data` contains `"]]>"`.
+       * @throws {DOMException}
+       * With code `INVALID_CHARACTER_ERR` if `data` contains `"]]>"`.
        * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/createCDATASection
        * @see https://dom.spec.whatwg.org/#dom-document-createcdatasection
        */
       createCDATASection: function(data) {
         if (data.indexOf("]]>") !== -1) {
-          throw new DOMException2(INVALID_CHARACTER_ERR, 'data contains "]]>"');
+          throw new DOMException2(DOMException2.INVALID_CHARACTER_ERR, 'data contains "]]>"');
         }
-        var node = new CDATASection();
+        var node = new CDATASection(PDC);
         node.ownerDocument = this;
+        node.childNodes = new NodeList();
         node.appendData(data);
         return node;
       },
       /**
        * Returns a ProcessingInstruction node whose target is target and data is data.
        *
-       * __This implementation differs from the specification:__
-       * - it does not do any input validation on the arguments and doesn't throw "InvalidCharacterError".
+       * __This behavior is slightly different from the in the specs__:
+       * - it does not do any input validation on the arguments and doesn't throw
+       * "InvalidCharacterError".
        *
        * Note: When the resulting document is serialized with `requireWellFormed: true`, the
-       * serializer throws with code `INVALID_STATE_ERR` if `.data` contains `?>` (W3C DOM Parsing
-       * §3.2.1.7). Without that option the data is emitted verbatim.
+       * serializer throws `InvalidStateError` if `.target` contains `:` or is an ASCII
+       * case-insensitive match for `"xml"`, or if `.data` contains `?>` or characters outside the
+       * XML Char production (W3C DOM Parsing §3.2.1.7). Without that option the data is emitted
+       * verbatim.
        *
        * @param {string} target
        * @param {string} data
@@ -22394,96 +23537,186 @@ var require_dom = __commonJS({
        * @see https://www.w3.org/TR/DOM-Parsing/#dfn-concept-serialize-xml §3.2.1.7
        */
       createProcessingInstruction: function(target, data) {
-        var node = new ProcessingInstruction();
+        var node = new ProcessingInstruction(PDC);
         node.ownerDocument = this;
-        node.tagName = node.nodeName = node.target = target;
+        node.childNodes = new NodeList();
+        node.nodeName = node.target = target;
         node.nodeValue = node.data = data;
         return node;
       },
+      /**
+       * Creates an `Attr` node that is owned by this document.
+       * In HTML Documents `localName` is the lower cased `name`,
+       * otherwise no transformation is being applied.
+       *
+       * __This implementation differs from the specification:__ - The provided name is not checked
+       * against the `Name` production,
+       * so no related error will be thrown.
+       *
+       * @param {string} name
+       * @returns {Attr}
+       * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/createAttribute
+       * @see https://dom.spec.whatwg.org/#dom-document-createattribute
+       */
       createAttribute: function(name) {
-        var node = new Attr();
+        if (!g.QName_exact.test(name)) {
+          throw new DOMException2(DOMException2.INVALID_CHARACTER_ERR, 'invalid character in name "' + name + '"');
+        }
+        if (this.type === "html") {
+          name = name.toLowerCase();
+        }
+        return this._createAttribute(name);
+      },
+      _createAttribute: function(name) {
+        var node = new Attr(PDC);
         node.ownerDocument = this;
+        node.childNodes = new NodeList();
         node.name = name;
         node.nodeName = name;
         node.localName = name;
         node.specified = true;
         return node;
       },
+      /**
+       * Creates an EntityReference object.
+       * The current implementation does not fill the `childNodes` with those of the corresponding
+       * `Entity`
+       *
+       * @deprecated
+       * In DOM Level 4.
+       * @param {string} name
+       * The name of the entity to reference. No namespace well-formedness checks are performed.
+       * @returns {EntityReference}
+       * @throws {DOMException}
+       * With code `INVALID_CHARACTER_ERR` when `name` is not valid.
+       * @throws {DOMException}
+       * with code `NOT_SUPPORTED_ERR` when the document is of type `html`
+       * @see https://www.w3.org/TR/DOM-Level-3-Core/core.html#ID-392B75AE
+       */
       createEntityReference: function(name) {
-        var node = new EntityReference();
+        if (!g.Name.test(name)) {
+          throw new DOMException2(DOMException2.INVALID_CHARACTER_ERR, 'not a valid xml name "' + name + '"');
+        }
+        if (this.type === "html") {
+          throw new DOMException2("document is an html document", DOMExceptionName.NotSupportedError);
+        }
+        var node = new EntityReference(PDC);
         node.ownerDocument = this;
+        node.childNodes = new NodeList();
         node.nodeName = name;
         return node;
       },
       // Introduced in DOM Level 2:
+      /**
+       * @param {string} namespaceURI
+       * @param {string} qualifiedName
+       * @returns {Element}
+       */
       createElementNS: function(namespaceURI, qualifiedName) {
-        var node = new Element();
-        var pl = qualifiedName.split(":");
+        var validated = validateAndExtract(namespaceURI, qualifiedName);
+        var node = new Element(PDC);
         var attrs = node.attributes = new NamedNodeMap();
         node.childNodes = new NodeList();
         node.ownerDocument = this;
         node.nodeName = qualifiedName;
         node.tagName = qualifiedName;
-        node.namespaceURI = namespaceURI;
-        if (pl.length == 2) {
-          node.prefix = pl[0];
-          node.localName = pl[1];
-        } else {
-          node.localName = qualifiedName;
-        }
+        node.namespaceURI = validated[0];
+        node.prefix = validated[1];
+        node.localName = validated[2];
         attrs._ownerElement = node;
         return node;
       },
       // Introduced in DOM Level 2:
+      /**
+       * @param {string} namespaceURI
+       * @param {string} qualifiedName
+       * @returns {Attr}
+       */
       createAttributeNS: function(namespaceURI, qualifiedName) {
-        var node = new Attr();
-        var pl = qualifiedName.split(":");
+        var validated = validateAndExtract(namespaceURI, qualifiedName);
+        var node = new Attr(PDC);
         node.ownerDocument = this;
+        node.childNodes = new NodeList();
         node.nodeName = qualifiedName;
         node.name = qualifiedName;
-        node.namespaceURI = namespaceURI;
         node.specified = true;
-        if (pl.length == 2) {
-          node.prefix = pl[0];
-          node.localName = pl[1];
-        } else {
-          node.localName = qualifiedName;
-        }
+        node.namespaceURI = validated[0];
+        node.prefix = validated[1];
+        node.localName = validated[2];
         return node;
       }
     };
     _extends(Document, Node);
-    function Element() {
-      this._nsMap = {};
+    function Element(symbol) {
+      checkSymbol(symbol);
+      this._nsMap = /* @__PURE__ */ Object.create(null);
     }
     Element.prototype = {
       nodeType: ELEMENT_NODE,
-      hasAttribute: function(name) {
-        return this.getAttributeNode(name) != null;
+      /**
+       * The attributes of this element.
+       *
+       * @type {NamedNodeMap | null}
+       */
+      attributes: null,
+      getQualifiedName: function() {
+        return this.prefix ? this.prefix + ":" + this.localName : this.localName;
       },
+      _isInHTMLDocumentAndNamespace: function() {
+        return this.ownerDocument.type === "html" && this.namespaceURI === NAMESPACE.HTML;
+      },
+      /**
+       * Implementaton of Level2 Core function hasAttributes.
+       *
+       * @returns {boolean}
+       * True if attribute list is not empty.
+       * @see https://www.w3.org/TR/DOM-Level-2-Core/#core-ID-NodeHasAttrs
+       */
+      hasAttributes: function() {
+        return !!(this.attributes && this.attributes.length);
+      },
+      hasAttribute: function(name) {
+        return !!this.getAttributeNode(name);
+      },
+      /**
+       * Returns element’s first attribute whose qualified name is `name`, and `null`
+       * if there is no such attribute.
+       *
+       * @param {string} name
+       * @returns {string | null}
+       */
       getAttribute: function(name) {
         var attr = this.getAttributeNode(name);
-        return attr && attr.value || "";
+        return attr ? attr.value : null;
       },
       getAttributeNode: function(name) {
+        if (this._isInHTMLDocumentAndNamespace()) {
+          name = name.toLowerCase();
+        }
         return this.attributes.getNamedItem(name);
       },
+      /**
+       * Sets the value of element’s first attribute whose qualified name is qualifiedName to value.
+       *
+       * @param {string} name
+       * @param {string} value
+       */
       setAttribute: function(name, value) {
-        var attr = this.ownerDocument.createAttribute(name);
-        attr.value = attr.nodeValue = "" + value;
-        this.setAttributeNode(attr);
+        if (this._isInHTMLDocumentAndNamespace()) {
+          name = name.toLowerCase();
+        }
+        var attr = this.getAttributeNode(name);
+        if (attr) {
+          attr.value = attr.nodeValue = "" + value;
+        } else {
+          attr = this.ownerDocument._createAttribute(name);
+          attr.value = attr.nodeValue = "" + value;
+          this.setAttributeNode(attr);
+        }
       },
       removeAttribute: function(name) {
         var attr = this.getAttributeNode(name);
         attr && this.removeAttributeNode(attr);
-      },
-      //four real opeartion method
-      appendChild: function(newChild) {
-        if (newChild.nodeType === DOCUMENT_FRAGMENT_NODE) {
-          return this.insertBefore(newChild, null);
-        } else {
-          return _appendSingleChild(this, newChild);
-        }
       },
       setAttributeNode: function(newAttr) {
         return this.attributes.setNamedItem(newAttr);
@@ -22502,24 +23735,126 @@ var require_dom = __commonJS({
       hasAttributeNS: function(namespaceURI, localName) {
         return this.getAttributeNodeNS(namespaceURI, localName) != null;
       },
+      /**
+       * Returns element’s attribute whose namespace is `namespaceURI` and local name is
+       * `localName`,
+       * or `null` if there is no such attribute.
+       *
+       * @param {string} namespaceURI
+       * @param {string} localName
+       * @returns {string | null}
+       */
       getAttributeNS: function(namespaceURI, localName) {
         var attr = this.getAttributeNodeNS(namespaceURI, localName);
-        return attr && attr.value || "";
+        return attr ? attr.value : null;
       },
+      /**
+       * Sets the value of element’s attribute whose namespace is `namespaceURI` and local name is
+       * `localName` to value.
+       *
+       * @param {string} namespaceURI
+       * @param {string} qualifiedName
+       * @param {string} value
+       * @see https://dom.spec.whatwg.org/#dom-element-setattributens
+       */
       setAttributeNS: function(namespaceURI, qualifiedName, value) {
-        var attr = this.ownerDocument.createAttributeNS(namespaceURI, qualifiedName);
-        attr.value = attr.nodeValue = "" + value;
-        this.setAttributeNode(attr);
+        var validated = validateAndExtract(namespaceURI, qualifiedName);
+        var localName = validated[2];
+        var attr = this.getAttributeNodeNS(namespaceURI, localName);
+        if (attr) {
+          attr.value = attr.nodeValue = "" + value;
+        } else {
+          attr = this.ownerDocument.createAttributeNS(namespaceURI, qualifiedName);
+          attr.value = attr.nodeValue = "" + value;
+          this.setAttributeNode(attr);
+        }
       },
       getAttributeNodeNS: function(namespaceURI, localName) {
         return this.attributes.getNamedItemNS(namespaceURI, localName);
       },
-      getElementsByTagName: function(tagName) {
+      /**
+       * Returns a LiveNodeList of all child elements which have **all** of the given class name(s).
+       *
+       * Returns an empty list if `classNames` is an empty string or only contains HTML white space
+       * characters.
+       *
+       * Warning: This returns a live LiveNodeList.
+       * Changes in the DOM will reflect in the array as the changes occur.
+       * If an element selected by this array no longer qualifies for the selector,
+       * it will automatically be removed. Be aware of this for iteration purposes.
+       *
+       * @param {string} classNames
+       * Is a string representing the class name(s) to match; multiple class names are separated by
+       * (ASCII-)whitespace.
+       * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByClassName
+       * @see https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementsByClassName
+       * @see https://dom.spec.whatwg.org/#concept-getelementsbyclassname
+       */
+      getElementsByClassName: function(classNames) {
+        var classNamesSet = toOrderedSet(classNames);
+        return new LiveNodeList(this, function(base) {
+          var ls = [];
+          if (classNamesSet.length > 0) {
+            _visitNode(base, function(node) {
+              if (node !== base && node.nodeType === ELEMENT_NODE) {
+                var nodeClassNames = node.getAttribute("class");
+                if (nodeClassNames) {
+                  var matches = classNames === nodeClassNames;
+                  if (!matches) {
+                    var nodeClassNamesSet = toOrderedSet(nodeClassNames);
+                    matches = classNamesSet.every(arrayIncludes(nodeClassNamesSet));
+                  }
+                  if (matches) {
+                    ls.push(node);
+                  }
+                }
+              }
+            });
+          }
+          return ls;
+        });
+      },
+      /**
+       * Returns a LiveNodeList of elements with the given qualifiedName.
+       * Searching for all descendants can be done by passing `*` as `qualifiedName`.
+       *
+       * All descendants of the specified element are searched, but not the element itself.
+       * The returned list is live, which means it updates itself with the DOM tree automatically.
+       * Therefore, there is no need to call `Element.getElementsByTagName()`
+       * with the same element and arguments repeatedly if the DOM changes in between calls.
+       *
+       * When called on an HTML element in an HTML document,
+       * `getElementsByTagName` lower-cases the argument before searching for it.
+       * This is undesirable when trying to match camel-cased SVG elements (such as
+       * `<linearGradient>`) in an HTML document.
+       * Instead, use `Element.getElementsByTagNameNS()`,
+       * which preserves the capitalization of the tag name.
+       *
+       * `Element.getElementsByTagName` is similar to `Document.getElementsByTagName()`,
+       * except that it only searches for elements that are descendants of the specified element.
+       *
+       * @param {string} qualifiedName
+       * @returns {LiveNodeList}
+       * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName
+       * @see https://dom.spec.whatwg.org/#concept-getelementsbytagname
+       */
+      getElementsByTagName: function(qualifiedName) {
+        var isHTMLDocument = (this.nodeType === DOCUMENT_NODE ? this : this.ownerDocument).type === "html";
+        var lowerQualifiedName = qualifiedName.toLowerCase();
         return new LiveNodeList(this, function(base) {
           var ls = [];
           _visitNode(base, function(node) {
-            if (node !== base && node.nodeType == ELEMENT_NODE && (tagName === "*" || node.tagName == tagName)) {
+            if (node === base || node.nodeType !== ELEMENT_NODE) {
+              return;
+            }
+            if (qualifiedName === "*") {
               ls.push(node);
+            } else {
+              var nodeQualifiedName = node.getQualifiedName();
+              var matchingQName = isHTMLDocument && node.namespaceURI === NAMESPACE.HTML ? lowerQualifiedName : qualifiedName;
+              if (nodeQualifiedName === matchingQName) {
+                ls.push(node);
+              }
             }
           });
           return ls;
@@ -22537,14 +23872,20 @@ var require_dom = __commonJS({
         });
       }
     };
+    Document.prototype.getElementsByClassName = Element.prototype.getElementsByClassName;
     Document.prototype.getElementsByTagName = Element.prototype.getElementsByTagName;
     Document.prototype.getElementsByTagNameNS = Element.prototype.getElementsByTagNameNS;
     _extends(Element, Node);
-    function Attr() {
+    function Attr(symbol) {
+      checkSymbol(symbol);
+      this.namespaceURI = null;
+      this.prefix = null;
+      this.ownerElement = null;
     }
     Attr.prototype.nodeType = ATTRIBUTE_NODE;
     _extends(Attr, Node);
-    function CharacterData() {
+    function CharacterData(symbol) {
+      checkSymbol(symbol);
     }
     CharacterData.prototype = {
       data: "",
@@ -22559,9 +23900,6 @@ var require_dom = __commonJS({
       insertData: function(offset, text) {
         this.replaceData(offset, 0, text);
       },
-      appendChild: function(newChild) {
-        throw new Error(ExceptionMessage[HIERARCHY_REQUEST_ERR]);
-      },
       deleteData: function(offset, count) {
         this.replaceData(offset, count, "");
       },
@@ -22574,11 +23912,12 @@ var require_dom = __commonJS({
       }
     };
     _extends(CharacterData, Node);
-    function Text() {
+    function Text(symbol) {
+      checkSymbol(symbol);
     }
     Text.prototype = {
       nodeName: "#text",
-      nodeType: TEXT_NODE,
+      nodeType: TEXT_NODE2,
       splitText: function(offset) {
         var text = this.data;
         var newText = text.substring(offset);
@@ -22593,55 +23932,74 @@ var require_dom = __commonJS({
       }
     };
     _extends(Text, CharacterData);
-    function Comment() {
+    function Comment(symbol) {
+      checkSymbol(symbol);
     }
     Comment.prototype = {
       nodeName: "#comment",
-      nodeType: COMMENT_NODE
+      nodeType: COMMENT_NODE2
     };
     _extends(Comment, CharacterData);
-    function CDATASection() {
+    function CDATASection(symbol) {
+      checkSymbol(symbol);
     }
     CDATASection.prototype = {
       nodeName: "#cdata-section",
       nodeType: CDATA_SECTION_NODE
     };
-    _extends(CDATASection, CharacterData);
-    function DocumentType() {
+    _extends(CDATASection, Text);
+    function DocumentType(symbol) {
+      checkSymbol(symbol);
     }
     DocumentType.prototype.nodeType = DOCUMENT_TYPE_NODE;
     _extends(DocumentType, Node);
-    function Notation() {
+    function Notation(symbol) {
+      checkSymbol(symbol);
     }
     Notation.prototype.nodeType = NOTATION_NODE;
     _extends(Notation, Node);
-    function Entity() {
+    function Entity(symbol) {
+      checkSymbol(symbol);
     }
     Entity.prototype.nodeType = ENTITY_NODE;
     _extends(Entity, Node);
-    function EntityReference() {
+    function EntityReference(symbol) {
+      checkSymbol(symbol);
     }
     EntityReference.prototype.nodeType = ENTITY_REFERENCE_NODE;
     _extends(EntityReference, Node);
-    function DocumentFragment() {
+    function DocumentFragment(symbol) {
+      checkSymbol(symbol);
     }
     DocumentFragment.prototype.nodeName = "#document-fragment";
     DocumentFragment.prototype.nodeType = DOCUMENT_FRAGMENT_NODE;
     _extends(DocumentFragment, Node);
-    function ProcessingInstruction() {
+    function ProcessingInstruction(symbol) {
+      checkSymbol(symbol);
     }
     ProcessingInstruction.prototype.nodeType = PROCESSING_INSTRUCTION_NODE;
-    _extends(ProcessingInstruction, Node);
+    _extends(ProcessingInstruction, CharacterData);
     function XMLSerializer() {
     }
-    XMLSerializer.prototype.serializeToString = function(node, isHtml, nodeFilter, options) {
-      return nodeSerializeToString.call(node, isHtml, nodeFilter, options);
+    XMLSerializer.prototype.serializeToString = function(node, options) {
+      return nodeSerializeToString.call(node, options);
     };
     Node.prototype.toString = nodeSerializeToString;
-    function nodeSerializeToString(isHtml, nodeFilter, options) {
-      var requireWellFormed = !!options && !!options.requireWellFormed;
+    function nodeSerializeToString(options) {
+      var opts;
+      if (typeof options === "function") {
+        opts = { requireWellFormed: false, splitCDATASections: true, nodeFilter: options };
+      } else if (options != null) {
+        opts = {
+          requireWellFormed: !!options.requireWellFormed,
+          splitCDATASections: options.splitCDATASections !== false,
+          nodeFilter: options.nodeFilter || null
+        };
+      } else {
+        opts = { requireWellFormed: false, splitCDATASections: true, nodeFilter: null };
+      }
       var buf = [];
-      var refNode = this.nodeType == 9 && this.documentElement || this;
+      var refNode = this.nodeType === DOCUMENT_NODE && this.documentElement || this;
       var prefix = refNode.prefix;
       var uri = refNode.namespaceURI;
       if (uri && prefix == null) {
@@ -22653,7 +24011,7 @@ var require_dom = __commonJS({
           ];
         }
       }
-      serializeToString(this, buf, isHtml, nodeFilter, visibleNamespaces, requireWellFormed);
+      serializeToString(this, buf, visibleNamespaces, opts);
       return buf.join("");
     }
     function needNamespaceDefine(node, isHTML, visibleNamespaces) {
@@ -22677,188 +24035,233 @@ var require_dom = __commonJS({
     function addSerializedAttribute(buf, qualifiedName, value) {
       buf.push(" ", qualifiedName, '="', value.replace(/[<>&"\t\n\r]/g, _xmlEncoder), '"');
     }
-    function serializeToString(node, buf, isHTML, nodeFilter, visibleNamespaces, requireWellFormed) {
+    function serializeToString(node, buf, visibleNamespaces, opts) {
       if (!visibleNamespaces) {
         visibleNamespaces = [];
       }
-      walkDOM(node, { ns: visibleNamespaces, isHTML }, {
-        enter: function(n, ctx) {
-          var ns = ctx.ns;
-          var html = ctx.isHTML;
-          if (nodeFilter) {
-            n = nodeFilter(n);
-            if (n) {
-              if (typeof n == "string") {
-                buf.push(n);
+      var nodeFilter = opts.nodeFilter;
+      var requireWellFormed = opts.requireWellFormed;
+      var splitCDATASections = opts.splitCDATASections;
+      var doc = node.nodeType === DOCUMENT_NODE ? node : node.ownerDocument;
+      var isHTML = doc.type === "html";
+      walkDOM(
+        node,
+        { ns: visibleNamespaces },
+        {
+          enter: function(n, ctx) {
+            var namespaces = ctx.ns;
+            if (nodeFilter) {
+              n = nodeFilter(n);
+              if (n) {
+                if (typeof n == "string") {
+                  buf.push(n);
+                  return null;
+                }
+              } else {
                 return null;
               }
-            } else {
-              return null;
             }
-          }
-          switch (n.nodeType) {
-            case ELEMENT_NODE:
-              var attrs = n.attributes;
-              var len = attrs.length;
-              var nodeName = n.tagName;
-              html = NAMESPACE.isHTML(n.namespaceURI) || html;
-              var prefixedNodeName = nodeName;
-              if (!html && !n.prefix && n.namespaceURI) {
-                var defaultNS;
-                for (var ai = 0; ai < attrs.length; ai++) {
-                  if (attrs.item(ai).name === "xmlns") {
-                    defaultNS = attrs.item(ai).value;
-                    break;
-                  }
-                }
-                if (!defaultNS) {
-                  for (var nsi = ns.length - 1; nsi >= 0; nsi--) {
-                    var nsEntry = ns[nsi];
-                    if (nsEntry.prefix === "" && nsEntry.namespace === n.namespaceURI) {
-                      defaultNS = nsEntry.namespace;
+            switch (n.nodeType) {
+              case ELEMENT_NODE:
+                var attrs = n.attributes;
+                var len = attrs.length;
+                var nodeName = n.tagName;
+                var prefixedNodeName = nodeName;
+                if (!isHTML && !n.prefix && n.namespaceURI) {
+                  var defaultNS;
+                  for (var ai = 0; ai < attrs.length; ai++) {
+                    if (attrs.item(ai).name === "xmlns") {
+                      defaultNS = attrs.item(ai).value;
                       break;
                     }
                   }
-                }
-                if (defaultNS !== n.namespaceURI) {
-                  for (var nsi = ns.length - 1; nsi >= 0; nsi--) {
-                    var nsEntry = ns[nsi];
-                    if (nsEntry.namespace === n.namespaceURI) {
-                      if (nsEntry.prefix) {
-                        prefixedNodeName = nsEntry.prefix + ":" + nodeName;
+                  if (!defaultNS) {
+                    for (var nsi = namespaces.length - 1; nsi >= 0; nsi--) {
+                      var nsEntry = namespaces[nsi];
+                      if (nsEntry.prefix === "" && nsEntry.namespace === n.namespaceURI) {
+                        defaultNS = nsEntry.namespace;
+                        break;
                       }
-                      break;
+                    }
+                  }
+                  if (defaultNS !== n.namespaceURI) {
+                    for (var nsi = namespaces.length - 1; nsi >= 0; nsi--) {
+                      var nsEntry = namespaces[nsi];
+                      if (nsEntry.namespace === n.namespaceURI) {
+                        if (nsEntry.prefix) {
+                          prefixedNodeName = nsEntry.prefix + ":" + nodeName;
+                        }
+                        break;
+                      }
                     }
                   }
                 }
-              }
-              buf.push("<", prefixedNodeName);
-              var childNs = ns.slice();
-              for (var i = 0; i < len; i++) {
-                var attr = attrs.item(i);
-                if (attr.prefix == "xmlns") {
-                  childNs.push({ prefix: attr.localName, namespace: attr.value });
-                } else if (attr.nodeName == "xmlns") {
-                  childNs.push({ prefix: "", namespace: attr.value });
-                }
-              }
-              for (var i = 0; i < len; i++) {
-                var attr = attrs.item(i);
-                if (needNamespaceDefine(attr, html, childNs)) {
-                  var attrPrefix = attr.prefix || "";
-                  var uri = attr.namespaceURI;
-                  addSerializedAttribute(buf, attrPrefix ? "xmlns:" + attrPrefix : "xmlns", uri);
-                  childNs.push({ prefix: attrPrefix, namespace: uri });
-                }
-                var filteredAttr = nodeFilter ? nodeFilter(attr) : attr;
-                if (filteredAttr) {
-                  if (typeof filteredAttr === "string") {
-                    buf.push(filteredAttr);
-                  } else {
-                    addSerializedAttribute(buf, filteredAttr.name, filteredAttr.value);
+                buf.push("<", prefixedNodeName);
+                var childNamespaces = namespaces.slice();
+                for (var i = 0; i < len; i++) {
+                  var attr = attrs.item(i);
+                  if (attr.prefix == "xmlns") {
+                    childNamespaces.push({
+                      prefix: attr.localName,
+                      namespace: attr.value
+                    });
+                  } else if (attr.nodeName == "xmlns") {
+                    childNamespaces.push({ prefix: "", namespace: attr.value });
                   }
                 }
-              }
-              if (nodeName === prefixedNodeName && needNamespaceDefine(n, html, childNs)) {
-                var nodePrefix = n.prefix || "";
-                var uri = n.namespaceURI;
-                addSerializedAttribute(buf, nodePrefix ? "xmlns:" + nodePrefix : "xmlns", uri);
-                childNs.push({ prefix: nodePrefix, namespace: uri });
-              }
-              var child2 = n.firstChild;
-              if (child2 || html && !/^(?:meta|link|img|br|hr|input)$/i.test(nodeName)) {
+                for (var i = 0; i < len; i++) {
+                  var attr = attrs.item(i);
+                  if (needNamespaceDefine(attr, isHTML, childNamespaces)) {
+                    var attrPrefix = attr.prefix || "";
+                    var uri = attr.namespaceURI;
+                    addSerializedAttribute(buf, attrPrefix ? "xmlns:" + attrPrefix : "xmlns", uri);
+                    childNamespaces.push({ prefix: attrPrefix, namespace: uri });
+                  }
+                  var filteredAttr = nodeFilter ? nodeFilter(attr) : attr;
+                  if (filteredAttr) {
+                    if (typeof filteredAttr === "string") {
+                      buf.push(filteredAttr);
+                    } else {
+                      addSerializedAttribute(buf, filteredAttr.name, filteredAttr.value);
+                    }
+                  }
+                }
+                if (nodeName === prefixedNodeName && needNamespaceDefine(n, isHTML, childNamespaces)) {
+                  var nodePrefix = n.prefix || "";
+                  var uri = n.namespaceURI;
+                  addSerializedAttribute(buf, nodePrefix ? "xmlns:" + nodePrefix : "xmlns", uri);
+                  childNamespaces.push({ prefix: nodePrefix, namespace: uri });
+                }
+                var canCloseTag = !n.firstChild;
+                if (canCloseTag && (isHTML || n.namespaceURI === NAMESPACE.HTML)) {
+                  canCloseTag = isHTMLVoidElement(nodeName);
+                }
+                if (canCloseTag) {
+                  buf.push("/>");
+                  return null;
+                }
                 buf.push(">");
-                if (html && /^script$/i.test(nodeName)) {
+                if (isHTML && isHTMLRawTextElement(nodeName)) {
+                  var child2 = n.firstChild;
                   while (child2) {
                     if (child2.data) {
                       buf.push(child2.data);
                     } else {
-                      serializeToString(child2, buf, html, nodeFilter, childNs.slice(), requireWellFormed);
+                      serializeToString(child2, buf, childNamespaces.slice(), opts);
                     }
                     child2 = child2.nextSibling;
                   }
-                  buf.push("</", nodeName, ">");
+                  buf.push("</", prefixedNodeName, ">");
                   return null;
                 }
-                return { ns: childNs, isHTML: html, tag: prefixedNodeName };
-              } else {
-                buf.push("/>");
+                return { ns: childNamespaces, tag: prefixedNodeName };
+              case DOCUMENT_NODE:
+              case DOCUMENT_FRAGMENT_NODE:
+                if (requireWellFormed && n.nodeType === DOCUMENT_NODE && n.documentElement == null) {
+                  throw new DOMException2("The Document has no documentElement", DOMExceptionName.InvalidStateError);
+                }
+                return { ns: namespaces };
+              case ATTRIBUTE_NODE:
+                addSerializedAttribute(buf, n.name, n.value);
                 return null;
-              }
-            case DOCUMENT_NODE:
-            case DOCUMENT_FRAGMENT_NODE:
-              return { ns: ns.slice(), isHTML: html, tag: null };
-            case ATTRIBUTE_NODE:
-              addSerializedAttribute(buf, n.name, n.value);
-              return null;
-            case TEXT_NODE:
-              buf.push(n.data.replace(/[<&>]/g, _xmlEncoder));
-              return null;
-            case CDATA_SECTION_NODE:
-              if (requireWellFormed && n.data.indexOf("]]>") !== -1) {
-                throw new DOMException2(INVALID_STATE_ERR, 'The CDATASection data contains "]]>"');
-              }
-              buf.push("<![CDATA[", n.data.replace(/]]>/g, "]]]]><![CDATA[>"), "]]>");
-              return null;
-            case COMMENT_NODE:
-              if (requireWellFormed && n.data.indexOf("-->") !== -1) {
-                throw new DOMException2(INVALID_STATE_ERR, 'The comment node data contains "-->"');
-              }
-              buf.push("<!--", n.data, "-->");
-              return null;
-            case DOCUMENT_TYPE_NODE:
-              if (requireWellFormed) {
-                if (n.publicId && !/^("[\x20\r\na-zA-Z0-9\-()+,.\/:=?;!*#@$_%']*"|'[\x20\r\na-zA-Z0-9\-()+,.\/:=?;!*#@$_%'"]*')$/.test(n.publicId)) {
-                  throw new DOMException2(INVALID_STATE_ERR, "DocumentType publicId is not a valid PubidLiteral");
+              case TEXT_NODE2:
+                if (requireWellFormed && g.InvalidChar.test(n.data)) {
+                  throw new DOMException2(
+                    "The Text node data contains characters outside the XML Char production",
+                    DOMExceptionName.InvalidStateError
+                  );
                 }
-                if (n.systemId && !/^("[^"]*"|'[^']*')$/.test(n.systemId)) {
-                  throw new DOMException2(INVALID_STATE_ERR, "DocumentType systemId is not a valid SystemLiteral");
+                buf.push(n.data.replace(/[<&>]/g, _xmlEncoder));
+                return null;
+              case CDATA_SECTION_NODE:
+                if (requireWellFormed && n.data.indexOf("]]>") !== -1) {
+                  throw new DOMException2('The CDATASection data contains "]]>"', DOMExceptionName.InvalidStateError);
                 }
-                if (n.internalSubset && n.internalSubset.indexOf("]>") !== -1) {
-                  throw new DOMException2(INVALID_STATE_ERR, 'DocumentType internalSubset contains "]>"');
+                if (splitCDATASections) {
+                  buf.push(g.CDATA_START, n.data.replace(/]]>/g, "]]]]><![CDATA[>"), g.CDATA_END);
+                } else {
+                  buf.push(g.CDATA_START, n.data, g.CDATA_END);
                 }
-              }
-              var pubid = n.publicId;
-              var sysid = n.systemId;
-              buf.push("<!DOCTYPE ", n.name);
-              if (pubid) {
-                buf.push(" PUBLIC ", pubid);
-                if (sysid && sysid != ".") {
-                  buf.push(" ", sysid);
+                return null;
+              case COMMENT_NODE2:
+                if (requireWellFormed) {
+                  if (g.InvalidChar.test(n.data)) {
+                    throw new DOMException2(
+                      "The comment node data contains characters outside the XML Char production",
+                      DOMExceptionName.InvalidStateError
+                    );
+                  }
+                  if (n.data.indexOf("--") !== -1 || n.data[n.data.length - 1] === "-") {
+                    throw new DOMException2(
+                      'The comment node data contains "--" or ends with "-"',
+                      DOMExceptionName.InvalidStateError
+                    );
+                  }
+                }
+                buf.push(g.COMMENT_START, n.data, g.COMMENT_END);
+                return null;
+              case DOCUMENT_TYPE_NODE:
+                var pubid = n.publicId;
+                var sysid = n.systemId;
+                if (requireWellFormed) {
+                  if (pubid && !g.PubidLiteral_match.test(pubid)) {
+                    throw new DOMException2("DocumentType publicId is not a valid PubidLiteral", DOMExceptionName.InvalidStateError);
+                  }
+                  if (sysid && sysid !== "." && !g.SystemLiteral_match.test(sysid)) {
+                    throw new DOMException2("DocumentType systemId is not a valid SystemLiteral", DOMExceptionName.InvalidStateError);
+                  }
+                  if (n.internalSubset && n.internalSubset.indexOf("]>") !== -1) {
+                    throw new DOMException2('DocumentType internalSubset contains "]>"', DOMExceptionName.InvalidStateError);
+                  }
+                }
+                buf.push(g.DOCTYPE_DECL_START, " ", n.name);
+                if (pubid) {
+                  buf.push(" ", g.PUBLIC, " ", pubid);
+                  if (sysid && sysid !== ".") {
+                    buf.push(" ", sysid);
+                  }
+                } else if (sysid && sysid !== ".") {
+                  buf.push(" ", g.SYSTEM, " ", sysid);
+                }
+                if (n.internalSubset) {
+                  buf.push(" [", n.internalSubset, "]");
                 }
                 buf.push(">");
-              } else if (sysid && sysid != ".") {
-                buf.push(" SYSTEM ", sysid, ">");
-              } else {
-                var sub = n.internalSubset;
-                if (sub) {
-                  buf.push(" [", sub, "]");
+                return null;
+              case PROCESSING_INSTRUCTION_NODE:
+                if (requireWellFormed) {
+                  if (n.target.indexOf(":") !== -1 || n.target.toLowerCase() === "xml") {
+                    throw new DOMException2("The ProcessingInstruction target is not well-formed", DOMExceptionName.InvalidStateError);
+                  }
+                  if (g.InvalidChar.test(n.data)) {
+                    throw new DOMException2(
+                      "The ProcessingInstruction data contains characters outside the XML Char production",
+                      DOMExceptionName.InvalidStateError
+                    );
+                  }
+                  if (n.data.indexOf("?>") !== -1) {
+                    throw new DOMException2('The ProcessingInstruction data contains "?>"', DOMExceptionName.InvalidStateError);
+                  }
                 }
-                buf.push(">");
-              }
-              return null;
-            case PROCESSING_INSTRUCTION_NODE:
-              if (requireWellFormed && n.data.indexOf("?>") !== -1) {
-                throw new DOMException2(INVALID_STATE_ERR, 'The ProcessingInstruction data contains "?>"');
-              }
-              buf.push("<?", n.target, " ", n.data, "?>");
-              return null;
-            case ENTITY_REFERENCE_NODE:
-              buf.push("&", n.nodeName, ";");
-              return null;
-            //case ENTITY_NODE:
-            //case NOTATION_NODE:
-            default:
-              buf.push("??", n.nodeName);
-              return null;
-          }
-        },
-        exit: function(n, childCtx) {
-          if (childCtx && childCtx.tag) {
-            buf.push("</", childCtx.tag, ">");
+                buf.push("<?", n.target, " ", n.data, "?>");
+                return null;
+              case ENTITY_REFERENCE_NODE:
+                buf.push("&", n.nodeName, ";");
+                return null;
+              //case ENTITY_NODE:
+              //case NOTATION_NODE:
+              default:
+                buf.push("??", n.nodeName);
+                return null;
+            }
+          },
+          exit: function(n, childCtx) {
+            if (childCtx && childCtx.tag) {
+              buf.push("</", childCtx.tag, ">");
+            }
           }
         }
-      });
+      );
     }
     function importNode(doc, node, deep) {
       var destRoot;
@@ -22882,9 +24285,9 @@ var require_dom = __commonJS({
       var destRoot;
       walkDOM(node, null, {
         enter: function(srcNode, destParent) {
-          var destNode = new srcNode.constructor();
+          var destNode = new srcNode.constructor(PDC);
           for (var n in srcNode) {
-            if (Object.prototype.hasOwnProperty.call(srcNode, n)) {
+            if (hasOwn(srcNode, n)) {
               var v = srcNode[n];
               if (typeof v != "object") {
                 if (v != destNode[n]) {
@@ -22924,6 +24327,17 @@ var require_dom = __commonJS({
     function __set__(object, key, value) {
       object[key] = value;
     }
+    function childrenRefresh(node) {
+      var ls = [];
+      var child2 = node.firstChild;
+      while (child2) {
+        if (child2.nodeType === ELEMENT_NODE) {
+          ls.push(child2);
+        }
+        child2 = child2.nextSibling;
+      }
+      return ls;
+    }
     try {
       if (Object.defineProperty) {
         Object.defineProperty(LiveNodeList.prototype, "length", {
@@ -22941,7 +24355,7 @@ var require_dom = __commonJS({
                   if (n.nodeType === ELEMENT_NODE || n.nodeType === DOCUMENT_FRAGMENT_NODE) {
                     return true;
                   }
-                  if (n.nodeType === PROCESSING_INSTRUCTION_NODE || n.nodeType === COMMENT_NODE) {
+                  if (n.nodeType === PROCESSING_INSTRUCTION_NODE || n.nodeType === COMMENT_NODE2) {
                     return null;
                   }
                   buf.push(n.nodeValue);
@@ -22969,18 +24383,46 @@ var require_dom = __commonJS({
             }
           }
         });
+        Object.defineProperty(Element.prototype, "children", {
+          get: function() {
+            return new LiveNodeList(this, childrenRefresh);
+          }
+        });
+        Object.defineProperty(Document.prototype, "children", {
+          get: function() {
+            return new LiveNodeList(this, childrenRefresh);
+          }
+        });
+        Object.defineProperty(DocumentFragment.prototype, "children", {
+          get: function() {
+            return new LiveNodeList(this, childrenRefresh);
+          }
+        });
         __set__ = function(object, key, value) {
           object["$$" + key] = value;
         };
       }
     } catch (e) {
     }
+    exports._updateLiveList = _updateLiveList;
+    exports.Attr = Attr;
+    exports.CDATASection = CDATASection;
+    exports.CharacterData = CharacterData;
+    exports.Comment = Comment;
+    exports.Document = Document;
+    exports.DocumentFragment = DocumentFragment;
     exports.DocumentType = DocumentType;
-    exports.DOMException = DOMException2;
     exports.DOMImplementation = DOMImplementation;
     exports.Element = Element;
+    exports.Entity = Entity;
+    exports.EntityReference = EntityReference;
+    exports.LiveNodeList = LiveNodeList;
+    exports.NamedNodeMap = NamedNodeMap;
     exports.Node = Node;
     exports.NodeList = NodeList;
+    exports.Notation = Notation;
+    exports.Text = Text;
+    exports.ProcessingInstruction = ProcessingInstruction;
     exports.walkDOM = walkDOM;
     exports.XMLSerializer = XMLSerializer;
   }
@@ -25132,10 +26574,17 @@ var require_entities = __commonJS({
 // node_modules/@xmldom/xmldom/lib/sax.js
 var require_sax = __commonJS({
   "node_modules/@xmldom/xmldom/lib/sax.js"(exports) {
-    var NAMESPACE = require_conventions().NAMESPACE;
-    var nameStartChar = /[A-Z_a-z\xC0-\xD6\xD8-\xF6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]/;
-    var nameChar = new RegExp("[\\-\\.0-9" + nameStartChar.source.slice(1, -1) + "\\u00B7\\u0300-\\u036F\\u203F-\\u2040]");
-    var tagNamePattern = new RegExp("^" + nameStartChar.source + nameChar.source + "*(?::" + nameStartChar.source + nameChar.source + "*)?$");
+    "use strict";
+    var conventions = require_conventions();
+    var g = require_grammar();
+    var errors = require_errors3();
+    var isHTMLEscapableRawTextElement = conventions.isHTMLEscapableRawTextElement;
+    var isHTMLMimeType = conventions.isHTMLMimeType;
+    var isHTMLRawTextElement = conventions.isHTMLRawTextElement;
+    var hasOwn = conventions.hasOwn;
+    var NAMESPACE = conventions.NAMESPACE;
+    var ParseError = errors.ParseError;
+    var DOMException2 = errors.DOMException;
     var S_TAG = 0;
     var S_ATTR = 1;
     var S_ATTR_SPACE = 2;
@@ -25144,31 +26593,23 @@ var require_sax = __commonJS({
     var S_ATTR_END = 5;
     var S_TAG_SPACE = 6;
     var S_TAG_CLOSE = 7;
-    function ParseError(message, locator) {
-      this.message = message;
-      this.locator = locator;
-      if (Error.captureStackTrace) Error.captureStackTrace(this, ParseError);
-    }
-    ParseError.prototype = new Error();
-    ParseError.prototype.name = ParseError.name;
     function XMLReader() {
     }
     XMLReader.prototype = {
       parse: function(source, defaultNSMap, entityMap) {
         var domBuilder = this.domBuilder;
         domBuilder.startDocument();
-        _copy(defaultNSMap, defaultNSMap = {});
-        parse(
-          source,
-          defaultNSMap,
-          entityMap,
-          domBuilder,
-          this.errorHandler
-        );
+        _copy(defaultNSMap, defaultNSMap = /* @__PURE__ */ Object.create(null));
+        parse2(source, defaultNSMap, entityMap, domBuilder, this.errorHandler);
         domBuilder.endDocument();
       }
     };
-    function parse(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
+    var ENTITY_REG = /&#?\w+;?/g;
+    function parse2(source, defaultNSMapCopy, entityMap, domBuilder, errorHandler) {
+      var isHTML = isHTMLMimeType(domBuilder.mimeType);
+      if (source.indexOf(g.UNICODE_REPLACEMENT_CHARACTER) >= 0) {
+        errorHandler.warning("Unicode replacement character detected, source encoding issues?");
+      }
       function fixedFromCharCode(code) {
         if (code > 65535) {
           code -= 65536;
@@ -25179,11 +26620,21 @@ var require_sax = __commonJS({
         }
       }
       function entityReplacer(a2) {
-        var k = a2.slice(1, -1);
-        if (Object.hasOwnProperty.call(entityMap, k)) {
+        var complete = a2[a2.length - 1] === ";" ? a2 : a2 + ";";
+        if (!isHTML && complete !== a2) {
+          errorHandler.error("EntityRef: expecting ;");
+          return a2;
+        }
+        var match = g.Reference.exec(complete);
+        if (!match || match[0].length !== complete.length) {
+          errorHandler.error("entity not matching Reference production: " + a2);
+          return a2;
+        }
+        var k = complete.slice(1, -1);
+        if (hasOwn(entityMap, k)) {
           return entityMap[k];
         } else if (k.charAt(0) === "#") {
-          return fixedFromCharCode(parseInt(k.substr(1).replace("x", "0x")));
+          return fixedFromCharCode(parseInt(k.substring(1).replace("x", "0x")));
         } else {
           errorHandler.error("entity not found:" + a2);
           return a2;
@@ -25191,95 +26642,107 @@ var require_sax = __commonJS({
       }
       function appendText(end2) {
         if (end2 > start) {
-          var xt = source.substring(start, end2).replace(/&#?\w+;/g, entityReplacer);
+          var xt = source.substring(start, end2).replace(ENTITY_REG, entityReplacer);
           locator && position(start);
           domBuilder.characters(xt, 0, end2 - start);
           start = end2;
         }
       }
+      var lineStart = 0;
+      var lineEnd = 0;
+      var linePattern = /\r\n?|\n|$/g;
+      var locator = domBuilder.locator;
       function position(p, m) {
         while (p >= lineEnd && (m = linePattern.exec(source))) {
-          lineStart = m.index;
-          lineEnd = lineStart + m[0].length;
+          lineStart = lineEnd;
+          lineEnd = m.index + m[0].length;
           locator.lineNumber++;
         }
         locator.columnNumber = p - lineStart + 1;
       }
-      var lineStart = 0;
-      var lineEnd = 0;
-      var linePattern = /.*(?:\r\n?|\n)|.*$/g;
-      var locator = domBuilder.locator;
       var parseStack = [{ currentNSMap: defaultNSMapCopy }];
-      var closeMap = {};
+      var unclosedTags = [];
       var start = 0;
       while (true) {
         try {
           var tagStart = source.indexOf("<", start);
           if (tagStart < 0) {
-            if (!source.substr(start).match(/^\s*$/)) {
+            if (!isHTML && unclosedTags.length > 0) {
+              return errorHandler.fatalError("unclosed xml tag(s): " + unclosedTags.join(", "));
+            }
+            if (!source.substring(start).match(/^\s*$/)) {
               var doc = domBuilder.doc;
-              var text = doc.createTextNode(source.substr(start));
+              var text = doc.createTextNode(source.substring(start));
+              if (doc.documentElement) {
+                return errorHandler.error("Extra content at the end of the document");
+              }
               doc.appendChild(text);
               domBuilder.currentElement = text;
             }
             return;
           }
           if (tagStart > start) {
+            var fromSource = source.substring(start, tagStart);
+            if (!isHTML && unclosedTags.length === 0) {
+              fromSource = fromSource.replace(new RegExp(g.S_OPT.source, "g"), "");
+              fromSource && errorHandler.error("Unexpected content outside root element: '" + fromSource + "'");
+            }
             appendText(tagStart);
           }
           switch (source.charAt(tagStart + 1)) {
             case "/":
-              var end = source.indexOf(">", tagStart + 3);
-              var tagName = source.substring(tagStart + 2, end).replace(/[ \t\n\r]+$/g, "");
-              var config = parseStack.pop();
-              if (end < 0) {
-                tagName = source.substring(tagStart + 2).replace(/[\s<].*/, "");
-                errorHandler.error("end tag name: " + tagName + " is not complete:" + config.tagName);
-                end = tagStart + 1 + tagName.length;
-              } else if (tagName.match(/\s</)) {
-                tagName = tagName.replace(/[\s<].*/, "");
-                errorHandler.error("end tag name: " + tagName + " maybe not complete");
-                end = tagStart + 1 + tagName.length;
+              var end = source.indexOf(">", tagStart + 2);
+              var tagNameRaw = source.substring(tagStart + 2, end > 0 ? end : void 0);
+              if (!tagNameRaw) {
+                return errorHandler.fatalError("end tag name missing");
               }
+              var tagNameMatch = end > 0 && g.reg("^", g.QName_group, g.S_OPT, "$").exec(tagNameRaw);
+              if (!tagNameMatch) {
+                return errorHandler.fatalError('end tag name contains invalid characters: "' + tagNameRaw + '"');
+              }
+              if (!domBuilder.currentElement && !domBuilder.doc.documentElement) {
+                return;
+              }
+              var currentTagName = unclosedTags[unclosedTags.length - 1] || domBuilder.currentElement.tagName || domBuilder.doc.documentElement.tagName || "";
+              if (currentTagName !== tagNameMatch[1]) {
+                var tagNameLower = tagNameMatch[1].toLowerCase();
+                if (!isHTML || currentTagName.toLowerCase() !== tagNameLower) {
+                  return errorHandler.fatalError('Opening and ending tag mismatch: "' + currentTagName + '" != "' + tagNameRaw + '"');
+                }
+              }
+              var config = parseStack.pop();
+              unclosedTags.pop();
               var localNSMap = config.localNSMap;
-              var endMatch = config.tagName == tagName;
-              var endIgnoreCaseMach = endMatch || config.tagName && config.tagName.toLowerCase() == tagName.toLowerCase();
-              if (endIgnoreCaseMach) {
-                domBuilder.endElement(config.uri, config.localName, tagName);
-                if (localNSMap) {
-                  for (var prefix in localNSMap) {
-                    if (Object.prototype.hasOwnProperty.call(localNSMap, prefix)) {
-                      domBuilder.endPrefixMapping(prefix);
-                    }
+              domBuilder.endElement(config.uri, config.localName, currentTagName);
+              if (localNSMap) {
+                for (var prefix in localNSMap) {
+                  if (hasOwn(localNSMap, prefix)) {
+                    domBuilder.endPrefixMapping(prefix);
                   }
                 }
-                if (!endMatch) {
-                  errorHandler.fatalError("end tag name: " + tagName + " is not match the current start tagName:" + config.tagName);
-                }
-              } else {
-                parseStack.push(config);
               }
               end++;
               break;
-            // end elment
+            // end element
             case "?":
               locator && position(tagStart);
-              end = parseInstruction(source, tagStart, domBuilder);
+              end = parseProcessingInstruction(source, tagStart, domBuilder, errorHandler);
               break;
             case "!":
               locator && position(tagStart);
-              end = parseDCC(source, tagStart, domBuilder, errorHandler);
+              end = parseDoctypeCommentOrCData(source, tagStart, domBuilder, errorHandler, isHTML);
               break;
             default:
               locator && position(tagStart);
               var el = new ElementAttributes();
               var currentNSMap = parseStack[parseStack.length - 1].currentNSMap;
-              var end = parseElementStartPart(source, tagStart, el, currentNSMap, entityReplacer, errorHandler);
+              var end = parseElementStartPart(source, tagStart, el, currentNSMap, entityReplacer, errorHandler, isHTML);
               var len = el.length;
-              if (!el.closed && fixSelfClosed(source, end, el.tagName, closeMap)) {
-                el.closed = true;
-                if (!entityMap.nbsp) {
-                  errorHandler.warning("unclosed xml attribute");
+              if (!el.closed) {
+                if (isHTML && conventions.isHTMLVoidElement(el.tagName)) {
+                  el.closed = true;
+                } else {
+                  unclosedTags.push(el.tagName);
                 }
               }
               if (locator && len) {
@@ -25299,7 +26762,7 @@ var require_sax = __commonJS({
                   parseStack.push(el);
                 }
               }
-              if (NAMESPACE.isHTML(el.uri) && !el.closed) {
+              if (isHTML && !el.closed) {
                 end = parseHtmlSpecialContent(source, end, el.tagName, entityReplacer, domBuilder);
               } else {
                 end++;
@@ -25308,6 +26771,8 @@ var require_sax = __commonJS({
         } catch (e) {
           if (e instanceof ParseError) {
             throw e;
+          } else if (e instanceof DOMException2) {
+            throw new ParseError(e.name + ": " + e.message, domBuilder.locator, e);
           }
           errorHandler.error("element parse error: " + e);
           end = -1;
@@ -25324,10 +26789,13 @@ var require_sax = __commonJS({
       t.columnNumber = f.columnNumber;
       return t;
     }
-    function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, errorHandler) {
+    function parseElementStartPart(source, start, el, currentNSMap, entityReplacer, errorHandler, isHTML) {
       function addAttribute(qname, value2, startIndex) {
-        if (el.attributeNames.hasOwnProperty(qname)) {
-          errorHandler.fatalError("Attribute " + qname + " redefined");
+        if (hasOwn(el.attributeNames, qname)) {
+          return errorHandler.fatalError("Attribute " + qname + " redefined");
+        }
+        if (!isHTML && value2.indexOf("<") >= 0) {
+          return errorHandler.fatalError("Unescaped '<' not allowed in attributes values");
         }
         el.addValue(
           qname,
@@ -25335,7 +26803,7 @@ var require_sax = __commonJS({
           // since the xmldom sax parser does not "interpret" DTD the following is not implemented:
           // - recursive replacement of (DTD) entity references
           // - trimming and collapsing multiple spaces into a single one for attributes that are not of type CDATA
-          value2.replace(/[\t\n\r]/g, " ").replace(/&#?\w+;/g, entityReplacer),
+          value2.replace(/[\t\n\r]/g, " ").replace(ENTITY_REG, entityReplacer),
           startIndex
         );
       }
@@ -25433,14 +26901,16 @@ var require_sax = __commonJS({
                   errorHandler.warning('attribute "' + value + '" missed quot(")!');
                   addAttribute(attrName, value, start);
                 } else {
-                  if (!NAMESPACE.isHTML(currentNSMap[""]) || !value.match(/^(?:disabled|checked|selected)$/i)) {
+                  if (!isHTML) {
                     errorHandler.warning('attribute "' + value + '" missed value!! "' + value + '" instead!!');
                   }
                   addAttribute(value, value, start);
                 }
                 break;
               case S_EQ:
-                throw new Error("attribute value missed!!");
+                if (!isHTML) {
+                  return errorHandler.fatalError(`AttValue: ' or " expected`);
+                }
             }
             return p;
           /*xml space '\x20' | #x9 | #xD | #xA; */
@@ -25471,8 +26941,7 @@ var require_sax = __commonJS({
                 //case S_ATTR:void();break;
                 //case S_ATTR_NOQUOT_VALUE:void();break;
                 case S_ATTR_SPACE:
-                  var tagName = el.tagName;
-                  if (!NAMESPACE.isHTML(currentNSMap[""]) || !attrName.match(/^(?:disabled|checked|selected)$/i)) {
+                  if (!isHTML) {
                     errorHandler.warning('attribute "' + attrName + '" missed value!! "' + attrName + '" instead2!!');
                   }
                   addAttribute(attrName, attrName, start);
@@ -25518,8 +26987,8 @@ var require_sax = __commonJS({
         a.localName = localName;
         if (nsPrefix !== false) {
           if (localNSMap == null) {
-            localNSMap = {};
-            _copy(currentNSMap, currentNSMap = {});
+            localNSMap = /* @__PURE__ */ Object.create(null);
+            _copy(currentNSMap, currentNSMap = /* @__PURE__ */ Object.create(null));
           }
           currentNSMap[nsPrefix] = localNSMap[nsPrefix] = value;
           a.uri = NAMESPACE.XMLNS;
@@ -25529,13 +26998,12 @@ var require_sax = __commonJS({
       var i = el.length;
       while (i--) {
         a = el[i];
-        var prefix = a.prefix;
-        if (prefix) {
-          if (prefix === "xml") {
+        if (a.prefix) {
+          if (a.prefix === "xml") {
             a.uri = NAMESPACE.XML;
           }
-          if (prefix !== "xmlns") {
-            a.uri = currentNSMap[prefix || ""];
+          if (a.prefix !== "xmlns") {
+            a.uri = currentNSMap[a.prefix];
           }
         }
       }
@@ -25553,7 +27021,7 @@ var require_sax = __commonJS({
         domBuilder.endElement(ns, localName, tagName);
         if (localNSMap) {
           for (prefix in localNSMap) {
-            if (Object.prototype.hasOwnProperty.call(localNSMap, prefix)) {
+            if (hasOwn(localNSMap, prefix)) {
               domBuilder.endPrefixMapping(prefix);
             }
           }
@@ -25565,111 +27033,262 @@ var require_sax = __commonJS({
       }
     }
     function parseHtmlSpecialContent(source, elStartEnd, tagName, entityReplacer, domBuilder) {
-      if (/^(?:script|textarea)$/i.test(tagName)) {
+      var isEscapableRaw = isHTMLEscapableRawTextElement(tagName);
+      if (isEscapableRaw || isHTMLRawTextElement(tagName)) {
         var elEndStart = source.indexOf("</" + tagName + ">", elStartEnd);
         var text = source.substring(elStartEnd + 1, elEndStart);
-        if (/[&<]/.test(text)) {
-          if (/^script$/i.test(tagName)) {
-            domBuilder.characters(text, 0, text.length);
-            return elEndStart;
-          }
-          text = text.replace(/&#?\w+;/g, entityReplacer);
-          domBuilder.characters(text, 0, text.length);
-          return elEndStart;
+        if (isEscapableRaw) {
+          text = text.replace(ENTITY_REG, entityReplacer);
         }
+        domBuilder.characters(text, 0, text.length);
+        return elEndStart;
       }
       return elStartEnd + 1;
     }
-    function fixSelfClosed(source, elStartEnd, tagName, closeMap) {
-      var pos = closeMap[tagName];
-      if (pos == null) {
-        pos = source.lastIndexOf("</" + tagName + ">");
-        if (pos < elStartEnd) {
-          pos = source.lastIndexOf("</" + tagName);
-        }
-        closeMap[tagName] = pos;
-      }
-      return pos < elStartEnd;
-    }
     function _copy(source, target) {
       for (var n in source) {
-        if (Object.prototype.hasOwnProperty.call(source, n)) {
+        if (hasOwn(source, n)) {
           target[n] = source[n];
         }
       }
     }
-    function parseDCC(source, start, domBuilder, errorHandler) {
-      var next = source.charAt(start + 2);
-      switch (next) {
-        case "-":
-          if (source.charAt(start + 3) === "-") {
-            var end = source.indexOf("-->", start + 4);
-            if (end > start) {
-              domBuilder.comment(source, start + 4, end - start - 4);
-              return end + 3;
-            } else {
-              errorHandler.error("Unclosed comment");
-              return -1;
-            }
-          } else {
-            return -1;
-          }
-        default:
-          if (source.substr(start + 3, 6) == "CDATA[") {
-            var end = source.indexOf("]]>", start + 9);
-            domBuilder.startCDATA();
-            domBuilder.characters(source, start + 9, end - start - 9);
-            domBuilder.endCDATA();
-            return end + 3;
-          }
-          var matchs = split(source, start);
-          var len = matchs.length;
-          if (len > 1 && /!doctype/i.test(matchs[0][0])) {
-            var name = matchs[1][0];
-            var pubid = false;
-            var sysid = false;
-            if (len > 3) {
-              if (/^public$/i.test(matchs[2][0])) {
-                pubid = matchs[3][0];
-                sysid = len > 4 && matchs[4][0];
-              } else if (/^system$/i.test(matchs[2][0])) {
-                sysid = matchs[3][0];
-              }
-            }
-            var lastMatch = matchs[len - 1];
-            domBuilder.startDTD(name, pubid, sysid);
-            domBuilder.endDTD();
-            return lastMatch.index + lastMatch[0].length;
-          }
+    function parseUtils(source, start) {
+      var index = start;
+      function char(n) {
+        n = n || 0;
+        return source.charAt(index + n);
       }
-      return -1;
-    }
-    function parseInstruction(source, start, domBuilder) {
-      var end = source.indexOf("?>", start);
-      if (end) {
-        var match = source.substring(start, end).match(/^<\?(\S*)\s*([\s\S]*?)$/);
+      function skip(n) {
+        n = n || 1;
+        index += n;
+      }
+      function skipBlanks() {
+        var blanks = 0;
+        while (index < source.length) {
+          var c = char();
+          if (c !== " " && c !== "\n" && c !== "	" && c !== "\r") {
+            return blanks;
+          }
+          blanks++;
+          skip();
+        }
+        return -1;
+      }
+      function substringFromIndex() {
+        return source.substring(index);
+      }
+      function substringStartsWith(text) {
+        return source.substring(index, index + text.length) === text;
+      }
+      function substringStartsWithCaseInsensitive(text) {
+        return source.substring(index, index + text.length).toUpperCase() === text.toUpperCase();
+      }
+      function getMatch(args) {
+        var expr = g.reg("^", args);
+        var match = expr.exec(substringFromIndex());
         if (match) {
-          var len = match[0].length;
-          domBuilder.processingInstruction(match[1], match[2]);
-          return end + 2;
-        } else {
-          return -1;
+          skip(match[0].length);
+          return match[0];
+        }
+        return null;
+      }
+      return {
+        char,
+        getIndex: function() {
+          return index;
+        },
+        getMatch,
+        getSource: function() {
+          return source;
+        },
+        skip,
+        skipBlanks,
+        substringFromIndex,
+        substringStartsWith,
+        substringStartsWithCaseInsensitive
+      };
+    }
+    function parseDoctypeInternalSubset(p, errorHandler) {
+      function parsePI(p2, errorHandler2) {
+        var match = g.PI.exec(p2.substringFromIndex());
+        if (!match) {
+          return errorHandler2.fatalError("processing instruction is not well-formed at position " + p2.getIndex());
+        }
+        if (match[1].toLowerCase() === "xml") {
+          return errorHandler2.fatalError(
+            "xml declaration is only allowed at the start of the document, but found at position " + p2.getIndex()
+          );
+        }
+        p2.skip(match[0].length);
+        return match[0];
+      }
+      var source = p.getSource();
+      if (p.char() === "[") {
+        p.skip(1);
+        var intSubsetStart = p.getIndex();
+        while (p.getIndex() < source.length) {
+          p.skipBlanks();
+          if (p.char() === "]") {
+            var internalSubset = source.substring(intSubsetStart, p.getIndex());
+            p.skip(1);
+            return internalSubset;
+          }
+          var current = null;
+          if (p.char() === "<" && p.char(1) === "!") {
+            switch (p.char(2)) {
+              case "E":
+                if (p.char(3) === "L") {
+                  current = p.getMatch(g.elementdecl);
+                } else if (p.char(3) === "N") {
+                  current = p.getMatch(g.EntityDecl);
+                }
+                break;
+              case "A":
+                current = p.getMatch(g.AttlistDecl);
+                break;
+              case "N":
+                current = p.getMatch(g.NotationDecl);
+                break;
+              case "-":
+                current = p.getMatch(g.Comment);
+                break;
+            }
+          } else if (p.char() === "<" && p.char(1) === "?") {
+            current = parsePI(p, errorHandler);
+          } else if (p.char() === "%") {
+            current = p.getMatch(g.PEReference);
+          } else {
+            return errorHandler.fatalError("Error detected in Markup declaration");
+          }
+          if (!current) {
+            return errorHandler.fatalError("Error in internal subset at position " + p.getIndex());
+          }
+        }
+        return errorHandler.fatalError("doctype internal subset is not well-formed, missing ]");
+      }
+    }
+    function parseDoctypeCommentOrCData(source, start, domBuilder, errorHandler, isHTML) {
+      var p = parseUtils(source, start);
+      switch (isHTML ? p.char(2).toUpperCase() : p.char(2)) {
+        case "-":
+          var comment = p.getMatch(g.Comment);
+          if (comment) {
+            domBuilder.comment(comment, g.COMMENT_START.length, comment.length - g.COMMENT_START.length - g.COMMENT_END.length);
+            return p.getIndex();
+          } else {
+            return errorHandler.fatalError("comment is not well-formed at position " + p.getIndex());
+          }
+        case "[":
+          var cdata = p.getMatch(g.CDSect);
+          if (cdata) {
+            if (!isHTML && !domBuilder.currentElement) {
+              return errorHandler.fatalError("CDATA outside of element");
+            }
+            domBuilder.startCDATA();
+            domBuilder.characters(cdata, g.CDATA_START.length, cdata.length - g.CDATA_START.length - g.CDATA_END.length);
+            domBuilder.endCDATA();
+            return p.getIndex();
+          } else {
+            return errorHandler.fatalError("Invalid CDATA starting at position " + start);
+          }
+        case "D": {
+          if (domBuilder.doc && domBuilder.doc.documentElement) {
+            return errorHandler.fatalError("Doctype not allowed inside or after documentElement at position " + p.getIndex());
+          }
+          if (isHTML ? !p.substringStartsWithCaseInsensitive(g.DOCTYPE_DECL_START) : !p.substringStartsWith(g.DOCTYPE_DECL_START)) {
+            return errorHandler.fatalError("Expected " + g.DOCTYPE_DECL_START + " at position " + p.getIndex());
+          }
+          p.skip(g.DOCTYPE_DECL_START.length);
+          if (p.skipBlanks() < 1) {
+            return errorHandler.fatalError("Expected whitespace after " + g.DOCTYPE_DECL_START + " at position " + p.getIndex());
+          }
+          var doctype = {
+            name: void 0,
+            publicId: void 0,
+            systemId: void 0,
+            internalSubset: void 0
+          };
+          doctype.name = p.getMatch(g.Name);
+          if (!doctype.name)
+            return errorHandler.fatalError("doctype name missing or contains unexpected characters at position " + p.getIndex());
+          if (isHTML && doctype.name.toLowerCase() !== "html") {
+            errorHandler.warning("Unexpected DOCTYPE in HTML document at position " + p.getIndex());
+          }
+          p.skipBlanks();
+          if (p.substringStartsWith(g.PUBLIC) || p.substringStartsWith(g.SYSTEM)) {
+            var match = g.ExternalID_match.exec(p.substringFromIndex());
+            if (!match) {
+              return errorHandler.fatalError("doctype external id is not well-formed at position " + p.getIndex());
+            }
+            if (match.groups.SystemLiteralOnly !== void 0) {
+              doctype.systemId = match.groups.SystemLiteralOnly;
+            } else {
+              doctype.systemId = match.groups.SystemLiteral;
+              doctype.publicId = match.groups.PubidLiteral;
+            }
+            p.skip(match[0].length);
+          } else if (isHTML && p.substringStartsWithCaseInsensitive(g.SYSTEM)) {
+            p.skip(g.SYSTEM.length);
+            if (p.skipBlanks() < 1) {
+              return errorHandler.fatalError("Expected whitespace after " + g.SYSTEM + " at position " + p.getIndex());
+            }
+            doctype.systemId = p.getMatch(g.ABOUT_LEGACY_COMPAT_SystemLiteral);
+            if (!doctype.systemId) {
+              return errorHandler.fatalError(
+                "Expected " + g.ABOUT_LEGACY_COMPAT + " in single or double quotes after " + g.SYSTEM + " at position " + p.getIndex()
+              );
+            }
+          }
+          if (isHTML && doctype.systemId && !g.ABOUT_LEGACY_COMPAT_SystemLiteral.test(doctype.systemId)) {
+            errorHandler.warning("Unexpected doctype.systemId in HTML document at position " + p.getIndex());
+          }
+          if (!isHTML) {
+            p.skipBlanks();
+            doctype.internalSubset = parseDoctypeInternalSubset(p, errorHandler);
+          }
+          p.skipBlanks();
+          if (p.char() !== ">") {
+            return errorHandler.fatalError("doctype not terminated with > at position " + p.getIndex());
+          }
+          p.skip(1);
+          domBuilder.startDTD(doctype.name, doctype.publicId, doctype.systemId, doctype.internalSubset);
+          domBuilder.endDTD();
+          return p.getIndex();
+        }
+        default:
+          return errorHandler.fatalError('Not well-formed XML starting with "<!" at position ' + start);
+      }
+    }
+    function parseProcessingInstruction(source, start, domBuilder, errorHandler) {
+      var match = source.substring(start).match(g.PI);
+      if (!match) {
+        return errorHandler.fatalError("Invalid processing instruction starting at position " + start);
+      }
+      if (match[1].toLowerCase() === "xml") {
+        if (start > 0) {
+          return errorHandler.fatalError(
+            "processing instruction at position " + start + " is an xml declaration which is only at the start of the document"
+          );
+        }
+        if (!g.XMLDecl.test(source.substring(start))) {
+          return errorHandler.fatalError("xml declaration is not well-formed");
         }
       }
-      return -1;
+      domBuilder.processingInstruction(match[1], match[2]);
+      return start + match[0].length;
     }
     function ElementAttributes() {
-      this.attributeNames = {};
+      this.attributeNames = /* @__PURE__ */ Object.create(null);
     }
     ElementAttributes.prototype = {
       setTagName: function(tagName) {
-        if (!tagNamePattern.test(tagName)) {
+        if (!g.QName_exact.test(tagName)) {
           throw new Error("invalid tagName:" + tagName);
         }
         this.tagName = tagName;
       },
       addValue: function(qName, value, offset) {
-        if (!tagNamePattern.test(qName)) {
+        if (!g.QName_exact.test(qName)) {
           throw new Error("invalid attribute:" + qName);
         }
         this.attributeNames[qName] = this.length;
@@ -25702,109 +27321,112 @@ var require_sax = __commonJS({
       //	getType:function(uri,localName){}
       //	getType:function(i){},
     };
-    function split(source, start) {
-      var match;
-      var buf = [];
-      var reg = /'[^']+'|"[^"]+"|[^\s<>\/=]+=?|(\/?\s*>|<)/g;
-      reg.lastIndex = start;
-      reg.exec(source);
-      while (match = reg.exec(source)) {
-        buf.push(match);
-        if (match[1]) return buf;
-      }
-    }
     exports.XMLReader = XMLReader;
-    exports.ParseError = ParseError;
+    exports.parseUtils = parseUtils;
+    exports.parseDoctypeCommentOrCData = parseDoctypeCommentOrCData;
   }
 });
 
 // node_modules/@xmldom/xmldom/lib/dom-parser.js
 var require_dom_parser = __commonJS({
   "node_modules/@xmldom/xmldom/lib/dom-parser.js"(exports) {
+    "use strict";
     var conventions = require_conventions();
     var dom = require_dom();
+    var errors = require_errors3();
     var entities = require_entities();
     var sax = require_sax();
     var DOMImplementation = dom.DOMImplementation;
+    var hasDefaultHTMLNamespace = conventions.hasDefaultHTMLNamespace;
+    var isHTMLMimeType = conventions.isHTMLMimeType;
+    var isValidMimeType = conventions.isValidMimeType;
+    var MIME_TYPE = conventions.MIME_TYPE;
     var NAMESPACE = conventions.NAMESPACE;
-    var ParseError = sax.ParseError;
+    var ParseError = errors.ParseError;
     var XMLReader = sax.XMLReader;
     function normalizeLineEndings(input) {
-      return input.replace(/\r[\n\u0085]/g, "\n").replace(/[\r\u0085\u2028]/g, "\n");
+      return input.replace(/\r[\n\u0085]/g, "\n").replace(/[\r\u0085\u2028\u2029]/g, "\n");
     }
-    function DOMParser(options) {
-      this.options = options || { locator: {} };
+    function DOMParser2(options) {
+      options = options || {};
+      if (options.locator === void 0) {
+        options.locator = true;
+      }
+      this.assign = options.assign || conventions.assign;
+      this.domHandler = options.domHandler || DOMHandler;
+      this.onError = options.onError || options.errorHandler;
+      if (options.errorHandler && typeof options.errorHandler !== "function") {
+        throw new TypeError("errorHandler object is no longer supported, switch to onError!");
+      } else if (options.errorHandler) {
+        options.errorHandler("warning", "The `errorHandler` option has been deprecated, use `onError` instead!", this);
+      }
+      this.normalizeLineEndings = options.normalizeLineEndings || normalizeLineEndings;
+      this.locator = !!options.locator;
+      this.xmlns = this.assign(/* @__PURE__ */ Object.create(null), options.xmlns);
     }
-    DOMParser.prototype.parseFromString = function(source, mimeType) {
-      var options = this.options;
-      var sax2 = new XMLReader();
-      var domBuilder = options.domBuilder || new DOMHandler();
-      var errorHandler = options.errorHandler;
-      var locator = options.locator;
-      var defaultNSMap = options.xmlns || {};
-      var isHTML = /\/x?html?$/.test(mimeType);
-      var entityMap = isHTML ? entities.HTML_ENTITIES : entities.XML_ENTITIES;
-      if (locator) {
+    DOMParser2.prototype.parseFromString = function(source, mimeType) {
+      if (!isValidMimeType(mimeType)) {
+        throw new TypeError('DOMParser.parseFromString: the provided mimeType "' + mimeType + '" is not valid.');
+      }
+      var defaultNSMap = this.assign(/* @__PURE__ */ Object.create(null), this.xmlns);
+      var entityMap = entities.XML_ENTITIES;
+      var defaultNamespace = defaultNSMap[""] || null;
+      if (hasDefaultHTMLNamespace(mimeType)) {
+        entityMap = entities.HTML_ENTITIES;
+        defaultNamespace = NAMESPACE.HTML;
+      } else if (mimeType === MIME_TYPE.XML_SVG_IMAGE) {
+        defaultNamespace = NAMESPACE.SVG;
+      }
+      defaultNSMap[""] = defaultNamespace;
+      defaultNSMap.xml = defaultNSMap.xml || NAMESPACE.XML;
+      var domBuilder = new this.domHandler({
+        mimeType,
+        defaultNamespace,
+        onError: this.onError
+      });
+      var locator = this.locator ? {} : void 0;
+      if (this.locator) {
         domBuilder.setDocumentLocator(locator);
       }
-      sax2.errorHandler = buildErrorHandler(errorHandler, domBuilder, locator);
-      sax2.domBuilder = options.domBuilder || domBuilder;
-      if (isHTML) {
-        defaultNSMap[""] = NAMESPACE.HTML;
+      var sax2 = new XMLReader();
+      sax2.errorHandler = domBuilder;
+      sax2.domBuilder = domBuilder;
+      var isXml = !conventions.isHTMLMimeType(mimeType);
+      if (isXml && typeof source !== "string") {
+        sax2.errorHandler.fatalError("source is not a string");
       }
-      defaultNSMap.xml = defaultNSMap.xml || NAMESPACE.XML;
-      var normalize = options.normalizeLineEndings || normalizeLineEndings;
-      if (source && typeof source === "string") {
-        sax2.parse(
-          normalize(source),
-          defaultNSMap,
-          entityMap
-        );
-      } else {
-        sax2.errorHandler.error("invalid doc source");
+      sax2.parse(this.normalizeLineEndings(String(source)), defaultNSMap, entityMap);
+      if (!domBuilder.doc.documentElement) {
+        sax2.errorHandler.fatalError("missing root element");
       }
       return domBuilder.doc;
     };
-    function buildErrorHandler(errorImpl, domBuilder, locator) {
-      if (!errorImpl) {
-        if (domBuilder instanceof DOMHandler) {
-          return domBuilder;
-        }
-        errorImpl = domBuilder;
-      }
-      var errorHandler = {};
-      var isCallback = errorImpl instanceof Function;
-      locator = locator || {};
-      function build(key) {
-        var fn = errorImpl[key];
-        if (!fn && isCallback) {
-          fn = errorImpl.length == 2 ? function(msg) {
-            errorImpl(key, msg);
-          } : errorImpl;
-        }
-        errorHandler[key] = fn && function(msg) {
-          fn("[xmldom " + key + "]	" + msg + _locator(locator));
-        } || function() {
-        };
-      }
-      build("warning");
-      build("error");
-      build("fatalError");
-      return errorHandler;
-    }
-    function DOMHandler() {
+    function DOMHandler(options) {
+      var opt = options || {};
+      this.mimeType = opt.mimeType || MIME_TYPE.XML_APPLICATION;
+      this.defaultNamespace = opt.defaultNamespace || null;
       this.cdata = false;
+      this.currentElement = void 0;
+      this.doc = void 0;
+      this.locator = void 0;
+      this.onError = opt.onError;
     }
     function position(locator, node) {
       node.lineNumber = locator.lineNumber;
       node.columnNumber = locator.columnNumber;
     }
     DOMHandler.prototype = {
+      /**
+       * Either creates an XML or an HTML document and stores it under `this.doc`.
+       * If it is an XML document, `this.defaultNamespace` is used to create it,
+       * and it will not contain any `childNodes`.
+       * If it is an HTML document, it will be created without any `childNodes`.
+       *
+       * @see http://www.saxproject.org/apidoc/org/xml/sax/ContentHandler.html
+       */
       startDocument: function() {
-        this.doc = new DOMImplementation().createDocument(null, null, null);
-        if (this.locator) {
-          this.doc.documentURI = this.locator.systemId;
-        }
+        var impl = new DOMImplementation();
+        this.doc = isHTMLMimeType(this.mimeType) ? impl.createHTMLDocument(false) : impl.createDocument(this.defaultNamespace, "");
       },
       startElement: function(namespaceURI, localName, qName, attrs) {
         var doc = this.doc;
@@ -25824,9 +27446,7 @@ var require_dom_parser = __commonJS({
         }
       },
       endElement: function(namespaceURI, localName, qName) {
-        var current = this.currentElement;
-        var tagName = current.tagName;
-        this.currentElement = current.parentNode;
+        this.currentElement = this.currentElement.parentNode;
       },
       startPrefixMapping: function(prefix, uri) {
       },
@@ -25860,10 +27480,17 @@ var require_dom_parser = __commonJS({
       endDocument: function() {
         this.doc.normalize();
       },
+      /**
+       * Stores the locator to be able to set the `columnNumber` and `lineNumber`
+       * on the created DOM nodes.
+       *
+       * @param {Locator} locator
+       */
       setDocumentLocator: function(locator) {
-        if (this.locator = locator) {
+        if (locator) {
           locator.lineNumber = 0;
         }
+        this.locator = locator;
       },
       //LexicalHandler
       comment: function(chars, start, length) {
@@ -25878,32 +27505,53 @@ var require_dom_parser = __commonJS({
       endCDATA: function() {
         this.cdata = false;
       },
-      startDTD: function(name, publicId, systemId) {
+      startDTD: function(name, publicId, systemId, internalSubset) {
         var impl = this.doc.implementation;
         if (impl && impl.createDocumentType) {
-          var dt = impl.createDocumentType(name, publicId, systemId);
+          var dt = impl.createDocumentType(name, publicId, systemId, internalSubset);
           this.locator && position(this.locator, dt);
           appendElement(this, dt);
           this.doc.doctype = dt;
         }
       },
+      reportError: function(level, message) {
+        if (typeof this.onError === "function") {
+          try {
+            this.onError(level, message, this);
+          } catch (e) {
+            throw new ParseError("Reporting " + level + ' "' + message + '" caused ' + e, this.locator);
+          }
+        } else {
+          console.error("[xmldom " + level + "]	" + message, _locator(this.locator));
+        }
+      },
       /**
-       * @see org.xml.sax.ErrorHandler
-       * @link http://www.saxproject.org/apidoc/org/xml/sax/ErrorHandler.html
+       * @see http://www.saxproject.org/apidoc/org/xml/sax/ErrorHandler.html
        */
-      warning: function(error2) {
-        console.warn("[xmldom warning]	" + error2, _locator(this.locator));
+      warning: function(message) {
+        this.reportError("warning", message);
       },
-      error: function(error2) {
-        console.error("[xmldom error]	" + error2, _locator(this.locator));
+      error: function(message) {
+        this.reportError("error", message);
       },
-      fatalError: function(error2) {
-        throw new ParseError(error2, this.locator);
+      /**
+       * This function reports a fatal error and throws a ParseError.
+       *
+       * @param {string} message
+       * - The message to be used for reporting and throwing the error.
+       * @returns {never}
+       * This function always throws an error and never returns a value.
+       * @throws {ParseError}
+       * Always throws a ParseError with the provided message.
+       */
+      fatalError: function(message) {
+        this.reportError("fatalError", message);
+        throw new ParseError(message, this.locator);
       }
     };
     function _locator(l) {
       if (l) {
-        return "\n@" + (l.systemId || "") + "#[line:" + l.lineNumber + ",col:" + l.columnNumber + "]";
+        return "\n@#[line:" + l.lineNumber + ",col:" + l.columnNumber + "]";
       }
     }
     function _toString(chars, start, length) {
@@ -25916,290 +27564,76 @@ var require_dom_parser = __commonJS({
         return chars;
       }
     }
-    "endDTD,startEntity,endEntity,attributeDecl,elementDecl,externalEntityDecl,internalEntityDecl,resolveEntity,getExternalSubset,notationDecl,unparsedEntityDecl".replace(/\w+/g, function(key) {
-      DOMHandler.prototype[key] = function() {
-        return null;
-      };
-    });
-    function appendElement(hander, node) {
-      if (!hander.currentElement) {
-        hander.doc.appendChild(node);
+    "endDTD,startEntity,endEntity,attributeDecl,elementDecl,externalEntityDecl,internalEntityDecl,resolveEntity,getExternalSubset,notationDecl,unparsedEntityDecl".replace(
+      /\w+/g,
+      function(key) {
+        DOMHandler.prototype[key] = function() {
+          return null;
+        };
+      }
+    );
+    function appendElement(handler, node) {
+      if (!handler.currentElement) {
+        handler.doc.appendChild(node);
       } else {
-        hander.currentElement.appendChild(node);
+        handler.currentElement.appendChild(node);
       }
     }
+    function onErrorStopParsing(level) {
+      if (level === "error") throw "onErrorStopParsing";
+    }
+    function onWarningStopParsing() {
+      throw "onWarningStopParsing";
+    }
     exports.__DOMHandler = DOMHandler;
+    exports.DOMParser = DOMParser2;
     exports.normalizeLineEndings = normalizeLineEndings;
-    exports.DOMParser = DOMParser;
+    exports.onErrorStopParsing = onErrorStopParsing;
+    exports.onWarningStopParsing = onWarningStopParsing;
   }
 });
 
 // node_modules/@xmldom/xmldom/lib/index.js
 var require_lib = __commonJS({
   "node_modules/@xmldom/xmldom/lib/index.js"(exports) {
-    var dom = require_dom();
-    exports.DOMImplementation = dom.DOMImplementation;
-    exports.XMLSerializer = dom.XMLSerializer;
-    exports.DOMParser = require_dom_parser().DOMParser;
-  }
-});
-
-// node_modules/plist/lib/parse.js
-var require_parse2 = __commonJS({
-  "node_modules/plist/lib/parse.js"(exports) {
-    var { DOMParser } = require_lib();
-    exports.parse = parse;
-    var TEXT_NODE = 3;
-    var CDATA_NODE = 4;
-    var COMMENT_NODE = 8;
-    function shouldIgnoreNode(node) {
-      return node.nodeType === TEXT_NODE || node.nodeType === COMMENT_NODE || node.nodeType === CDATA_NODE;
-    }
-    function isEmptyNode(node) {
-      if (!node.childNodes || node.childNodes.length === 0) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-    function invariant(test, message) {
-      if (!test) {
-        throw new Error(message);
-      }
-    }
-    function parse(xml) {
-      var doc = new DOMParser().parseFromString(xml);
-      invariant(
-        doc.documentElement.nodeName === "plist",
-        "malformed document. First element should be <plist>"
-      );
-      var plist2 = parsePlistXML(doc.documentElement);
-      if (plist2.length == 1) plist2 = plist2[0];
-      return plist2;
-    }
-    function parsePlistXML(node) {
-      var i, new_obj, key, val, new_arr, res, counter, type;
-      if (!node)
-        return null;
-      if (node.nodeName === "plist") {
-        new_arr = [];
-        if (isEmptyNode(node)) {
-          return new_arr;
-        }
-        for (i = 0; i < node.childNodes.length; i++) {
-          if (!shouldIgnoreNode(node.childNodes[i])) {
-            new_arr.push(parsePlistXML(node.childNodes[i]));
-          }
-        }
-        return new_arr;
-      } else if (node.nodeName === "dict") {
-        new_obj = {};
-        key = null;
-        counter = 0;
-        if (isEmptyNode(node)) {
-          return new_obj;
-        }
-        for (i = 0; i < node.childNodes.length; i++) {
-          if (shouldIgnoreNode(node.childNodes[i])) continue;
-          if (counter % 2 === 0) {
-            invariant(
-              node.childNodes[i].nodeName === "key",
-              "Missing key while parsing <dict/>."
-            );
-            key = parsePlistXML(node.childNodes[i]);
-          } else {
-            invariant(
-              node.childNodes[i].nodeName !== "key",
-              'Unexpected key "' + parsePlistXML(node.childNodes[i]) + '" while parsing <dict/>.'
-            );
-            new_obj[key] = parsePlistXML(node.childNodes[i]);
-          }
-          counter += 1;
-        }
-        if (counter % 2 === 1) {
-          new_obj[key] = "";
-        }
-        return new_obj;
-      } else if (node.nodeName === "array") {
-        new_arr = [];
-        if (isEmptyNode(node)) {
-          return new_arr;
-        }
-        for (i = 0; i < node.childNodes.length; i++) {
-          if (!shouldIgnoreNode(node.childNodes[i])) {
-            res = parsePlistXML(node.childNodes[i]);
-            if (null != res) new_arr.push(res);
-          }
-        }
-        return new_arr;
-      } else if (node.nodeName === "#text") {
-      } else if (node.nodeName === "key") {
-        if (isEmptyNode(node)) {
-          return "";
-        }
-        invariant(
-          node.childNodes[0].nodeValue !== "__proto__",
-          "__proto__ keys can lead to prototype pollution. More details on CVE-2022-22912"
-        );
-        return node.childNodes[0].nodeValue;
-      } else if (node.nodeName === "string") {
-        res = "";
-        if (isEmptyNode(node)) {
-          return res;
-        }
-        for (i = 0; i < node.childNodes.length; i++) {
-          var type = node.childNodes[i].nodeType;
-          if (type === TEXT_NODE || type === CDATA_NODE) {
-            res += node.childNodes[i].nodeValue;
-          }
-        }
-        return res;
-      } else if (node.nodeName === "integer") {
-        invariant(
-          !isEmptyNode(node),
-          'Cannot parse "" as integer.'
-        );
-        return parseInt(node.childNodes[0].nodeValue, 10);
-      } else if (node.nodeName === "real") {
-        invariant(
-          !isEmptyNode(node),
-          'Cannot parse "" as real.'
-        );
-        res = "";
-        for (i = 0; i < node.childNodes.length; i++) {
-          if (node.childNodes[i].nodeType === TEXT_NODE) {
-            res += node.childNodes[i].nodeValue;
-          }
-        }
-        return parseFloat(res);
-      } else if (node.nodeName === "data") {
-        res = "";
-        if (isEmptyNode(node)) {
-          return Buffer.from(res, "base64");
-        }
-        for (i = 0; i < node.childNodes.length; i++) {
-          if (node.childNodes[i].nodeType === TEXT_NODE) {
-            res += node.childNodes[i].nodeValue.replace(/\s+/g, "");
-          }
-        }
-        return Buffer.from(res, "base64");
-      } else if (node.nodeName === "date") {
-        invariant(
-          !isEmptyNode(node),
-          'Cannot parse "" as Date.'
-        );
-        return new Date(node.childNodes[0].nodeValue);
-      } else if (node.nodeName === "null") {
-        return null;
-      } else if (node.nodeName === "true") {
-        return true;
-      } else if (node.nodeName === "false") {
-        return false;
-      } else {
-        throw new Error("Invalid PLIST tag " + node.nodeName);
-      }
-    }
-  }
-});
-
-// node_modules/base64-js/index.js
-var require_base64_js = __commonJS({
-  "node_modules/base64-js/index.js"(exports) {
     "use strict";
-    exports.byteLength = byteLength;
-    exports.toByteArray = toByteArray;
-    exports.fromByteArray = fromByteArray;
-    var lookup = [];
-    var revLookup = [];
-    var Arr = typeof Uint8Array !== "undefined" ? Uint8Array : Array;
-    var code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    for (i = 0, len = code.length; i < len; ++i) {
-      lookup[i] = code[i];
-      revLookup[code.charCodeAt(i)] = i;
-    }
-    var i;
-    var len;
-    revLookup["-".charCodeAt(0)] = 62;
-    revLookup["_".charCodeAt(0)] = 63;
-    function getLens(b64) {
-      var len2 = b64.length;
-      if (len2 % 4 > 0) {
-        throw new Error("Invalid string. Length must be a multiple of 4");
-      }
-      var validLen = b64.indexOf("=");
-      if (validLen === -1) validLen = len2;
-      var placeHoldersLen = validLen === len2 ? 0 : 4 - validLen % 4;
-      return [validLen, placeHoldersLen];
-    }
-    function byteLength(b64) {
-      var lens = getLens(b64);
-      var validLen = lens[0];
-      var placeHoldersLen = lens[1];
-      return (validLen + placeHoldersLen) * 3 / 4 - placeHoldersLen;
-    }
-    function _byteLength(b64, validLen, placeHoldersLen) {
-      return (validLen + placeHoldersLen) * 3 / 4 - placeHoldersLen;
-    }
-    function toByteArray(b64) {
-      var tmp;
-      var lens = getLens(b64);
-      var validLen = lens[0];
-      var placeHoldersLen = lens[1];
-      var arr = new Arr(_byteLength(b64, validLen, placeHoldersLen));
-      var curByte = 0;
-      var len2 = placeHoldersLen > 0 ? validLen - 4 : validLen;
-      var i2;
-      for (i2 = 0; i2 < len2; i2 += 4) {
-        tmp = revLookup[b64.charCodeAt(i2)] << 18 | revLookup[b64.charCodeAt(i2 + 1)] << 12 | revLookup[b64.charCodeAt(i2 + 2)] << 6 | revLookup[b64.charCodeAt(i2 + 3)];
-        arr[curByte++] = tmp >> 16 & 255;
-        arr[curByte++] = tmp >> 8 & 255;
-        arr[curByte++] = tmp & 255;
-      }
-      if (placeHoldersLen === 2) {
-        tmp = revLookup[b64.charCodeAt(i2)] << 2 | revLookup[b64.charCodeAt(i2 + 1)] >> 4;
-        arr[curByte++] = tmp & 255;
-      }
-      if (placeHoldersLen === 1) {
-        tmp = revLookup[b64.charCodeAt(i2)] << 10 | revLookup[b64.charCodeAt(i2 + 1)] << 4 | revLookup[b64.charCodeAt(i2 + 2)] >> 2;
-        arr[curByte++] = tmp >> 8 & 255;
-        arr[curByte++] = tmp & 255;
-      }
-      return arr;
-    }
-    function tripletToBase64(num) {
-      return lookup[num >> 18 & 63] + lookup[num >> 12 & 63] + lookup[num >> 6 & 63] + lookup[num & 63];
-    }
-    function encodeChunk(uint8, start, end) {
-      var tmp;
-      var output = [];
-      for (var i2 = start; i2 < end; i2 += 3) {
-        tmp = (uint8[i2] << 16 & 16711680) + (uint8[i2 + 1] << 8 & 65280) + (uint8[i2 + 2] & 255);
-        output.push(tripletToBase64(tmp));
-      }
-      return output.join("");
-    }
-    function fromByteArray(uint8) {
-      var tmp;
-      var len2 = uint8.length;
-      var extraBytes = len2 % 3;
-      var parts = [];
-      var maxChunkLength = 16383;
-      for (var i2 = 0, len22 = len2 - extraBytes; i2 < len22; i2 += maxChunkLength) {
-        parts.push(encodeChunk(uint8, i2, i2 + maxChunkLength > len22 ? len22 : i2 + maxChunkLength));
-      }
-      if (extraBytes === 1) {
-        tmp = uint8[len2 - 1];
-        parts.push(
-          lookup[tmp >> 2] + lookup[tmp << 4 & 63] + "=="
-        );
-      } else if (extraBytes === 2) {
-        tmp = (uint8[len2 - 2] << 8) + uint8[len2 - 1];
-        parts.push(
-          lookup[tmp >> 10] + lookup[tmp >> 4 & 63] + lookup[tmp << 2 & 63] + "="
-        );
-      }
-      return parts.join("");
-    }
+    var conventions = require_conventions();
+    exports.assign = conventions.assign;
+    exports.hasDefaultHTMLNamespace = conventions.hasDefaultHTMLNamespace;
+    exports.isHTMLMimeType = conventions.isHTMLMimeType;
+    exports.isValidMimeType = conventions.isValidMimeType;
+    exports.MIME_TYPE = conventions.MIME_TYPE;
+    exports.NAMESPACE = conventions.NAMESPACE;
+    var errors = require_errors3();
+    exports.DOMException = errors.DOMException;
+    exports.DOMExceptionName = errors.DOMExceptionName;
+    exports.ExceptionCode = errors.ExceptionCode;
+    exports.ParseError = errors.ParseError;
+    var dom = require_dom();
+    exports.Attr = dom.Attr;
+    exports.CDATASection = dom.CDATASection;
+    exports.CharacterData = dom.CharacterData;
+    exports.Comment = dom.Comment;
+    exports.Document = dom.Document;
+    exports.DocumentFragment = dom.DocumentFragment;
+    exports.DocumentType = dom.DocumentType;
+    exports.DOMImplementation = dom.DOMImplementation;
+    exports.Element = dom.Element;
+    exports.Entity = dom.Entity;
+    exports.EntityReference = dom.EntityReference;
+    exports.LiveNodeList = dom.LiveNodeList;
+    exports.NamedNodeMap = dom.NamedNodeMap;
+    exports.Node = dom.Node;
+    exports.NodeList = dom.NodeList;
+    exports.Notation = dom.Notation;
+    exports.ProcessingInstruction = dom.ProcessingInstruction;
+    exports.Text = dom.Text;
+    exports.XMLSerializer = dom.XMLSerializer;
+    var domParser = require_dom_parser();
+    exports.DOMParser = domParser.DOMParser;
+    exports.normalizeLineEndings = domParser.normalizeLineEndings;
+    exports.onErrorStopParsing = domParser.onErrorStopParsing;
+    exports.onWarningStopParsing = domParser.onWarningStopParsing;
   }
 });
 
@@ -30360,97 +31794,6 @@ var require_lib2 = __commonJS({
   }
 });
 
-// node_modules/plist/lib/build.js
-var require_build = __commonJS({
-  "node_modules/plist/lib/build.js"(exports) {
-    var base64 = require_base64_js();
-    var xmlbuilder = require_lib2();
-    exports.build = build;
-    function ISODateString(d) {
-      function pad(n) {
-        return n < 10 ? "0" + n : n;
-      }
-      return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) + "T" + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds()) + "Z";
-    }
-    var toString = Object.prototype.toString;
-    function type(obj) {
-      var m = toString.call(obj).match(/\[object (.*)\]/);
-      return m ? m[1] : m;
-    }
-    function build(obj, opts) {
-      var XMLHDR = {
-        version: "1.0",
-        encoding: "UTF-8"
-      };
-      var XMLDTD = {
-        pubid: "-//Apple//DTD PLIST 1.0//EN",
-        sysid: "http://www.apple.com/DTDs/PropertyList-1.0.dtd"
-      };
-      var doc = xmlbuilder.create("plist");
-      doc.dec(XMLHDR.version, XMLHDR.encoding, XMLHDR.standalone);
-      doc.dtd(XMLDTD.pubid, XMLDTD.sysid);
-      doc.att("version", "1.0");
-      walk_obj(obj, doc);
-      if (!opts) opts = {};
-      opts.pretty = opts.pretty !== false;
-      return doc.end(opts);
-    }
-    function walk_obj(next, next_child) {
-      var tag_type, i, prop;
-      var name = type(next);
-      if ("Undefined" == name) {
-        return;
-      } else if (Array.isArray(next)) {
-        next_child = next_child.ele("array");
-        for (i = 0; i < next.length; i++) {
-          walk_obj(next[i], next_child);
-        }
-      } else if (Buffer.isBuffer(next)) {
-        next_child.ele("data").raw(next.toString("base64"));
-      } else if ("Object" == name) {
-        next_child = next_child.ele("dict");
-        for (prop in next) {
-          if (next.hasOwnProperty(prop)) {
-            next_child.ele("key").txt(prop);
-            walk_obj(next[prop], next_child);
-          }
-        }
-      } else if ("Number" == name) {
-        tag_type = next % 1 === 0 ? "integer" : "real";
-        next_child.ele(tag_type).txt(next.toString());
-      } else if ("BigInt" == name) {
-        next_child.ele("integer").txt(next);
-      } else if ("Date" == name) {
-        next_child.ele("date").txt(ISODateString(new Date(next)));
-      } else if ("Boolean" == name) {
-        next_child.ele(next ? "true" : "false");
-      } else if ("String" == name) {
-        next_child.ele("string").txt(next);
-      } else if ("ArrayBuffer" == name) {
-        next_child.ele("data").raw(base64.fromByteArray(next));
-      } else if (next && next.buffer && "ArrayBuffer" == type(next.buffer)) {
-        next_child.ele("data").raw(base64.fromByteArray(new Uint8Array(next.buffer), next_child));
-      } else if ("Null" === name) {
-        next_child.ele("null").txt("");
-      }
-    }
-  }
-});
-
-// node_modules/plist/index.js
-var require_plist = __commonJS({
-  "node_modules/plist/index.js"(exports) {
-    var parserFunctions = require_parse2();
-    Object.keys(parserFunctions).forEach(function(k) {
-      exports[k] = parserFunctions[k];
-    });
-    var builderFunctions = require_build();
-    Object.keys(builderFunctions).forEach(function(k) {
-      exports[k] = builderFunctions[k];
-    });
-  }
-});
-
 // node_modules/big-integer/BigInteger.js
 var require_BigInteger = __commonJS({
   "node_modules/big-integer/BigInteger.js"(exports, module) {
@@ -33306,7 +34649,161 @@ function generateJwt(issuerId, apiKeyId, apiPrivateKey, ttlSeconds = 600) {
 
 // src/utils/appMetadata.ts
 var import_adm_zip = __toESM(require_adm_zip());
-var import_plist = __toESM(require_plist());
+
+// node_modules/plist/lib/parse.js
+var import_xmldom = __toESM(require_lib(), 1);
+function base64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+var TEXT_NODE = 3;
+var CDATA_NODE = 4;
+var COMMENT_NODE = 8;
+function shouldIgnoreNode(node) {
+  return node.nodeType === TEXT_NODE || node.nodeType === COMMENT_NODE || node.nodeType === CDATA_NODE;
+}
+function isEmptyNode(node) {
+  if (!node.childNodes || node.childNodes.length === 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+function invariant(test, message) {
+  if (!test) {
+    throw new Error(message);
+  }
+}
+function parse(xml) {
+  const doc = new import_xmldom.DOMParser().parseFromString(xml, "text/xml");
+  invariant(
+    doc.documentElement.nodeName === "plist",
+    "malformed document. First element should be <plist>"
+  );
+  let plist = parsePlistXML(doc.documentElement);
+  if (plist.length == 1) plist = plist[0];
+  return plist;
+}
+function parsePlistXML(node) {
+  if (!node) return null;
+  if (node.nodeName === "plist") {
+    const new_arr = [];
+    if (isEmptyNode(node)) {
+      return new_arr;
+    }
+    for (let i = 0; i < node.childNodes.length; i++) {
+      if (!shouldIgnoreNode(node.childNodes[i])) {
+        new_arr.push(parsePlistXML(node.childNodes[i]));
+      }
+    }
+    return new_arr;
+  } else if (node.nodeName === "dict") {
+    const new_obj = {};
+    let key = null;
+    let counter = 0;
+    if (isEmptyNode(node)) {
+      return new_obj;
+    }
+    for (let i = 0; i < node.childNodes.length; i++) {
+      if (shouldIgnoreNode(node.childNodes[i])) continue;
+      if (counter % 2 === 0) {
+        invariant(
+          node.childNodes[i].nodeName === "key",
+          "Missing key while parsing <dict/>."
+        );
+        key = parsePlistXML(node.childNodes[i]);
+      } else {
+        invariant(
+          node.childNodes[i].nodeName !== "key",
+          'Unexpected key "' + parsePlistXML(node.childNodes[i]) + '" while parsing <dict/>.'
+        );
+        new_obj[key] = parsePlistXML(node.childNodes[i]);
+      }
+      counter += 1;
+    }
+    if (counter % 2 === 1) {
+      new_obj[key] = "";
+    }
+    return new_obj;
+  } else if (node.nodeName === "array") {
+    const new_arr = [];
+    if (isEmptyNode(node)) {
+      return new_arr;
+    }
+    for (let i = 0; i < node.childNodes.length; i++) {
+      if (!shouldIgnoreNode(node.childNodes[i])) {
+        const res = parsePlistXML(node.childNodes[i]);
+        if (null != res) new_arr.push(res);
+      }
+    }
+    return new_arr;
+  } else if (node.nodeName === "#text") {
+  } else if (node.nodeName === "key") {
+    if (isEmptyNode(node)) {
+      return "";
+    }
+    invariant(
+      node.childNodes[0].nodeValue !== "__proto__",
+      "__proto__ keys can lead to prototype pollution. More details on CVE-2022-22912"
+    );
+    return node.childNodes[0].nodeValue;
+  } else if (node.nodeName === "string") {
+    let res = "";
+    if (isEmptyNode(node)) {
+      return res;
+    }
+    for (let i = 0; i < node.childNodes.length; i++) {
+      const type = node.childNodes[i].nodeType;
+      if (type === TEXT_NODE || type === CDATA_NODE) {
+        res += node.childNodes[i].nodeValue;
+      }
+    }
+    return res;
+  } else if (node.nodeName === "integer") {
+    invariant(!isEmptyNode(node), 'Cannot parse "" as integer.');
+    return parseInt(node.childNodes[0].nodeValue, 10);
+  } else if (node.nodeName === "real") {
+    invariant(!isEmptyNode(node), 'Cannot parse "" as real.');
+    let res = "";
+    for (let i = 0; i < node.childNodes.length; i++) {
+      if (node.childNodes[i].nodeType === TEXT_NODE) {
+        res += node.childNodes[i].nodeValue;
+      }
+    }
+    return parseFloat(res);
+  } else if (node.nodeName === "data") {
+    let res = "";
+    if (isEmptyNode(node)) {
+      return base64ToUint8Array(res);
+    }
+    for (let i = 0; i < node.childNodes.length; i++) {
+      if (node.childNodes[i].nodeType === TEXT_NODE) {
+        res += node.childNodes[i].nodeValue.replace(/\s+/g, "");
+      }
+    }
+    return base64ToUint8Array(res);
+  } else if (node.nodeName === "date") {
+    invariant(!isEmptyNode(node), 'Cannot parse "" as Date.');
+    return new Date(node.childNodes[0].nodeValue);
+  } else if (node.nodeName === "null") {
+    return null;
+  } else if (node.nodeName === "true") {
+    return true;
+  } else if (node.nodeName === "false") {
+    return false;
+  } else {
+    throw new Error("Invalid PLIST tag " + node.nodeName);
+  }
+}
+
+// node_modules/plist/lib/build.js
+var import_xmlbuilder = __toESM(require_lib2(), 1);
+
+// src/utils/appMetadata.ts
 var import_bplist_parser = __toESM(require_bplistParser());
 async function extractAppMetadata(appPath) {
   const zip = new import_adm_zip.default(appPath);
@@ -33335,7 +34832,7 @@ function parsePlistBuffer(buffer) {
     const parsed = import_bplist_parser.default.parseBuffer(buffer);
     return parsed[0] ?? {};
   }
-  return import_plist.default.parse(buffer.toString());
+  return parse(buffer.toString());
 }
 
 // src/utils/http.ts
