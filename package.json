@@ -1,6 +1,6 @@
 {
   "name": "upload-testflight-action",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "A GitHub Action that uploads a app to Apple's TestFlight",
   "main": "src/main.ts",
   "engines": {
