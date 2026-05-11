@@ -2890,12 +2890,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jiti@npm:^2.6.0":
-  version: 2.6.1
-  resolution: "jiti@npm:2.6.1"
+"jiti@npm:^2.7.0":
+  version: 2.7.0
+  resolution: "jiti@npm:2.7.0"
   bin:
     jiti: lib/jiti-cli.mjs
-  checksum: 10c0/79b2e96a8e623f66c1b703b98ec1b8be4500e1d217e09b09e343471bbb9c105381b83edbb979d01cef18318cc45ce6e153571b6c83122170eefa531c64b6789b
+  checksum: 10c0/1b1e2310a490dce1aeea3da5f5dfe18273516c20ce48be2e98eb8ea452d5f3dcc8fd0cfd6d28b4052a24c5dbab6e3089b2d7e79f0bce7915b10d750929563c42
   languageName: node
   linkType: hard
 
@@ -2963,14 +2963,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"knip@npm:~6.9.0":
-  version: 6.9.0
-  resolution: "knip@npm:6.9.0"
+"knip@npm:~6.12.2":
+  version: 6.12.2
+  resolution: "knip@npm:6.12.2"
   dependencies:
     fdir: "npm:^6.5.0"
     formatly: "npm:^0.3.0"
     get-tsconfig: "npm:4.14.0"
-    jiti: "npm:^2.6.0"
+    jiti: "npm:^2.7.0"
     minimist: "npm:^1.2.8"
     oxc-parser: "npm:^0.128.0"
     oxc-resolver: "npm:^11.19.1"
@@ -2984,7 +2984,7 @@ __metadata:
   bin:
     knip: bin/knip.js
     knip-bun: bin/knip-bun.js
-  checksum: 10c0/38562d6d3672be400ea0d0f58a8f180f23ab11405ac3f330320007df281c2e8ebc43d7341d6452d456460fc98c06a383688af9672ab5b022fc1676c02b161240
+  checksum: 10c0/b88ecc1c3fc15bcbafbe747767195b7a540e6aa166e023cdda65e660ee64345d16068fd7dbeea961313c44405ea8cddeaa0e5a7ae2504ef05ef9bf8c28192eec
   languageName: node
   linkType: hard
 
@@ -4382,7 +4382,7 @@ __metadata:
     esbuild: "npm:~0.28.0"
     eslint: "npm:~9.39.0"
     eslint-plugin-github: "npm:~6.0.0"
-    knip: "npm:~6.9.0"
+    knip: "npm:~6.12.2"
     plist: "npm:~4.0.0"
     prettier: "npm:~3.8.0"
     typescript: "npm:~6.0.0"
