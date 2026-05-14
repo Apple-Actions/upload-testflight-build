@@ -1,6 +1,6 @@
 {
   "name": "upload-testflight-action",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "description": "A GitHub Action that uploads a app to Apple's TestFlight",
   "main": "src/main.ts",
   "engines": {
@@ -49,6 +49,8 @@
   },
   "packageManager": "yarn@4.14.1",
   "knip": {
-    "ignore": ["scripts/undici-stub.mjs"]
+    "ignore": [
+      "scripts/undici-stub.mjs"
+    ]
   }
 }
