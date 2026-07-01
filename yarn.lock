@@ -1168,10 +1168,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"adm-zip@npm:~0.5.0":
-  version: 0.5.17
-  resolution: "adm-zip@npm:0.5.17"
-  checksum: 10c0/29b8f2a1070fc540ad9a45b13d0ceffd141d78e5a4501f102e978f0256f8290326009ccd3411213e90f3a810c830b39453548638879b3295ddc3814c20a8307b
+"adm-zip@npm:~0.5.18":
+  version: 0.5.18
+  resolution: "adm-zip@npm:0.5.18"
+  checksum: 10c0/9b734aa7126a01913baec02bf495d086b5d7e63315522b7087620e3fc8279c8ebd65109da4d99f16fcf873d87522ae6ffd913aef65449fd22c68777b772685e9
   languageName: node
   linkType: hard
 
@@ -4359,7 +4359,7 @@ __metadata:
     "@actions/io": "npm:~3.0.0"
     "@types/adm-zip": "npm:~0.5.0"
     "@types/node": "npm:~24.12.4"
-    adm-zip: "npm:~0.5.0"
+    adm-zip: "npm:~0.5.18"
     bplist-parser: "npm:~0.3.0"
     esbuild: "npm:~0.28.1"
     eslint: "npm:~9.39.0"
