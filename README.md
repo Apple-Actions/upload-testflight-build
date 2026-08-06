@@ -3,21 +3,31 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](LICENSE)
 [![PRs welcome!](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-## Getting Started (can be the same key as the [download provisioning profiles action](https://github.com/Apple-Actions/download-provisioning-profiles/blob/master/README.md#getting-started))
+## Getting Started
 
-* Create an `App Store Connect API Key` ([these instructions](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api) with the role `App Manager`)
-* Download the certificate (must be done upon creation and will be called `ios_distribution.cer`)
-* Copy the `.p8` ( `cat AuthKey_<key_id>.p8 | pbcopy` )
-* Add it as a secret called `APPSTORE_API_PRIVATE_KEY` and add `Key ID` as a variable called `APPSTORE_API_KEY_ID`
-* Add `Issuer ID` as a variable called `APPSTORE_ISSUER_ID` ([found here](https://appstoreconnect.apple.com/access/integrations/api))
+Use the same App Store Connect API key as [`download-provisioning-profiles`](https://github.com/Apple-Actions/download-provisioning-profiles).
 
-## Usage:
+### Canonical GitHub ENVs
+
+| Kind | Name | Purpose |
+| --- | --- | --- |
+| Variable | `APPSTORE_ISSUER_ID` | App Store Connect issuer ID |
+| Variable | `APPSTORE_API_KEY_ID` | App Store Connect API key ID |
+| Secret | `APPSTORE_API_PRIVATE_KEY` | Contents of `AuthKey_*.p8` |
+
+1. Create an [App Store Connect API key](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api) with the role `App Manager`
+2. Download `AuthKey_<key_id>.p8` when the key is created (shown once)
+3. Set the variable/secret names above (or run [`scripts/setup.sh`](https://github.com/Apple-Actions/download-provisioning-profiles#one-shot-setup) / `configure-github.sh`)
+
+Issuer ID: [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api)
+
+## Usage
 
 ```yaml
-- name: 'Upload app to TestFlight'
-  uses: apple-actions/upload-testflight-build@v4
-  with: 
-    app-path: 'path/to/application.ipa' 
+- name: Upload app to TestFlight
+  uses: apple-actions/upload-testflight-build@v5
+  with:
+    app-path: 'path/to/application.ipa'
     issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
     api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
@@ -50,7 +60,6 @@
 
 * The default upload backend is now `appstore-api` (uses the App Store Connect API directly and works on Linux and macOS runners). If you depended on the previous behavior, set `backend: altool` or `backend: transporter`.
 * The `transporter-response` output has been removed. Use the `upload-backend` output if you need to know which backend handled the upload.
-
 
 ## Additional Arguments
 
