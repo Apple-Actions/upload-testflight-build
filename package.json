@@ -37,7 +37,6 @@
     "plist": "~5.0.0"
   },
   "devDependencies": {
-    "@types/adm-zip": "~0.5.0",
     "@types/node": "~24.12.4",
     "esbuild": "~0.28.1",
     "eslint": "~9.39.0",
