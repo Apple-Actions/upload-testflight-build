@@ -38,16 +38,16 @@
     "plist": "~5.0.0"
   },
   "devDependencies": {
-    "@types/node": "~24.12.4",
-    "esbuild": "~0.28.1",
+    "@types/node": "~24.12.0",
+    "esbuild": "~0.28.0",
     "eslint": "~9.39.0",
     "eslint-plugin-github": "~6.0.0",
     "knip": "~6.23.0",
-    "prettier": "~3.9.4",
+    "prettier": "~3.9.0",
     "typescript": "~6.0.0",
-    "vitest": "~4.1.8"
+    "vitest": "~4.1.0"
   },
-  "packageManager": "yarn@4.14.1",
+  "packageManager": "yarn@4.18.0",
   "knip": {
     "ignore": [
       "scripts/undici-stub.mjs"
