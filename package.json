@@ -41,7 +41,7 @@
     "@types/node": "~24.12.0",
     "esbuild": "~0.28.0",
     "eslint": "~9.39.0",
-    "eslint-plugin-github": "~6.0.0",
+    "eslint-plugin-github": "~6.1.2",
     "knip": "~6.23.0",
     "prettier": "~3.9.0",
     "typescript": "~6.0.0",
