@@ -45,7 +45,7 @@
     "knip": "~6.23.0",
     "prettier": "~3.9.0",
     "typescript": "~6.0.0",
-    "vitest": "~4.1.0"
+    "vitest": "~4.1.11"
   },
   "packageManager": "yarn@4.18.0",
   "knip": {
