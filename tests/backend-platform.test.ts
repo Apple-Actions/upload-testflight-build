@@ -9,6 +9,9 @@ const warningMock = vi.hoisted(() => vi.fn())
 
 const installPrivateKeyMock = vi.hoisted(() => vi.fn())
 const deletePrivateKeysMock = vi.hoisted(() => vi.fn())
+const submitBuildMetadataUpdatesMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined)
+)
 
 const appstoreUploadMock = vi.hoisted(() => vi.fn())
 const transporterUploadMock = vi.hoisted(() => vi.fn())
@@ -74,7 +77,7 @@ vi.mock('../src/backends/altool', () => ({
 }))
 
 vi.mock('../src/buildMetadata', () => ({
-  submitBuildMetadataUpdates: vi.fn().mockResolvedValue(undefined)
+  submitBuildMetadataUpdates: submitBuildMetadataUpdatesMock
 }))
 
 describe('backend platform guard', () => {
@@ -129,5 +132,22 @@ describe('backend platform guard', () => {
       expect.stringContaining('only supports .ipa uploads')
     )
     expect(appstoreUploadMock).not.toHaveBeenCalled()
+  })
+
+  it('fails the job with the metadata error after a successful upload', async () => {
+    submitBuildMetadataUpdatesMock.mockRejectedValueOnce(
+      new Error('Test Information is missing')
+    )
+    getInputMock.mockImplementation((name: string) => {
+      if (name === 'backend') return 'appstore-api'
+      return commonInput(name)
+    })
+
+    await import('../src/main')
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(setFailedMock).toHaveBeenCalledWith('Test Information is missing')
+    expect(setOutputMock).toHaveBeenCalledWith('upload-backend', 'appstoreApi')
+    expect(deletePrivateKeysMock).toHaveBeenCalled()
   })
 })

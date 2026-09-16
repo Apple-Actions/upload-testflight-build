@@ -37,6 +37,30 @@ Issuer ID: [App Store Connect → Users and Access → Integrations → App Stor
     backend: AppStoreAPI # optional: AppStoreAPI | transporter | altool (default: AppStoreAPI; case insensitive)
 ```
 
+> [!NOTE]
+> Attaching `release-notes` requires TestFlight **Test Information** (Beta App Description, Feedback Email, and a primary locale) to be filled in App Store Connect. If notes cannot be attached after a successful upload, the action fails and the error explains how to fix it (for example, missing Test Information) instead of a generic polling timeout.
+
+Populate Test Information from your app repo (bundle id, description, and feedback email) with the same credential flags as [`download-provisioning-profiles`](https://github.com/Apple-Actions/download-provisioning-profiles) (`curl`, `jq`, `openssl`, and `python3`). The script prints what it would write; pass `--apply` to send it to App Store Connect:
+
+```bash
+./scripts/populate-test-information.sh --dir /path/to/your/app
+./scripts/populate-test-information.sh --dir /path/to/your/app --apply \
+  --issuer-id 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' \
+  --api-key-id 'XXXXXXXXXX' \
+  --api-private-key-path ~/Downloads/AuthKey_XXXXXXXXXX.p8
+```
+
+The script looks for `.apple-actions/test-information.json`, then Expo `app.json` / `app.config.json`, `Config/Shared.xcconfig`, `Info.plist`, `package.json`, `mailto:` / support emails in source, and `README.md`. Commit a config file when those sources are incomplete:
+
+```json
+{
+  "bundleId": "com.example.app",
+  "locale": "en-US",
+  "description": "Help us test the latest beta.",
+  "feedbackEmail": "feedback@example.com"
+}
+```
+
 > [!IMPORTANT]
 > `transporter` backend requires Transporter to be installed on the runner and the action now calls the installed binary directly (no `xcrun` shim).
 > The GitHub hosted runners (Xcode 14+) do not have Transporter installed by default.

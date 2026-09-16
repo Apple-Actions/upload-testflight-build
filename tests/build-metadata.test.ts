@@ -134,6 +134,12 @@ describe('release notes submission', () => {
           },
           '/builds': {data: [{id: 'build-id'}]},
           '/v1/builds': {data: [{id: 'build-id'}]},
+          '/apps/app-id/betaAppLocalizations': {
+            data: [{id: 'app-loc-id', attributes: {locale: 'en-US'}}]
+          },
+          '/v1/apps/app-id/betaAppLocalizations': {
+            data: [{id: 'app-loc-id', attributes: {locale: 'en-US'}}]
+          },
           '/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]},
           '/v1/builds/build-id/betaBuildLocalizations': {data: [{id: 'loc-id'}]}
         }
@@ -163,7 +169,7 @@ describe('release notes submission', () => {
       apiPrivateKey: 'PRIVATE_KEY'
     })
 
-    expect(fetchMock).toHaveBeenCalledTimes(4)
+    expect(fetchMock).toHaveBeenCalledTimes(5)
     expect(
       observedAuthHeaders.every(header => header.startsWith('Bearer '))
     ).toBe(true)
@@ -247,5 +253,137 @@ describe('release notes submission', () => {
       data: {attributes: {usesNonExemptEncryption: boolean}}
     }
     expect(patchPayload.data.attributes.usesNonExemptEncryption).toBe(false)
+  })
+
+  it('fails fast when Test Information is missing', async () => {
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const url = input instanceof URL ? input : new URL(String(input))
+      const path = url.pathname
+
+      const data =
+        path === '/apps' || path === '/v1/apps'
+          ? {
+              data: [{id: 'app-id', attributes: {bundleId: 'com.example.app'}}]
+            }
+          : path === '/builds' || path === '/v1/builds'
+            ? {data: [{id: 'build-id'}]}
+            : {data: []}
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {get: () => 'application/json'},
+        json: async () => data,
+        text: async () => JSON.stringify(data)
+      }
+    })
+
+    await expect(
+      submitBuildMetadataUpdates({
+        releaseNotes: 'What to test',
+        appPath: 'path/to/app.ipa',
+        appType: 'ios',
+        issuerId: 'issuer-id',
+        apiKeyId: 'api-key-id',
+        apiPrivateKey: 'PRIVATE_KEY'
+      })
+    ).rejects.toThrow(
+      /The IPA already uploaded and processing is VALID[\s\S]*Test Information is missing[\s\S]*Fill App Store Connect → TestFlight → Test Information/
+    )
+
+    const buildLocalizationGets = fetchMock.mock.calls.filter(
+      (call: unknown[]) => {
+        const url = String(call[0])
+        const method = (
+          (call[1] as {method?: string} | undefined)?.method ?? 'GET'
+        ).toUpperCase()
+        return method === 'GET' && url.includes('betaBuildLocalizations')
+      }
+    )
+    expect(buildLocalizationGets).toHaveLength(0)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('creates a beta build localization when none exists', async () => {
+    let observedPostBody: unknown
+
+    fetchMock.mockImplementation(
+      async (
+        input: unknown,
+        init?: {
+          method?: string
+          body?: unknown
+        }
+      ) => {
+        const url = input instanceof URL ? input : new URL(String(input))
+        const method = (init?.method ?? 'GET').toUpperCase()
+
+        if (method === 'POST') {
+          observedPostBody = init?.body
+            ? JSON.parse(init.body as string)
+            : undefined
+          return {
+            ok: true,
+            status: 201,
+            headers: {get: () => 'application/json'},
+            json: async () => ({}),
+            text: async () => '{}'
+          }
+        }
+
+        const path = url.pathname
+        const data =
+          path === '/apps' || path === '/v1/apps'
+            ? {
+                data: [
+                  {id: 'app-id', attributes: {bundleId: 'com.example.app'}}
+                ]
+              }
+            : path === '/builds' || path === '/v1/builds'
+              ? {data: [{id: 'build-id'}]}
+              : path.endsWith('/betaAppLocalizations')
+                ? {
+                    data: [{id: 'app-loc-id', attributes: {locale: 'en-US'}}]
+                  }
+                : {data: []}
+
+        return {
+          ok: true,
+          status: 200,
+          headers: {get: () => 'application/json'},
+          json: async () => data,
+          text: async () => JSON.stringify(data)
+        }
+      }
+    )
+
+    await submitBuildMetadataUpdates({
+      releaseNotes: 'What testers should look at',
+      appPath: 'path/to/app.ipa',
+      appType: 'ios',
+      issuerId: 'issuer-id',
+      apiKeyId: 'api-key-id',
+      apiPrivateKey: 'PRIVATE_KEY'
+    })
+
+    const postPayload = observedPostBody as {
+      data: {
+        type: string
+        attributes: {locale: string; whatsNew: string}
+        relationships: {build: {data: {type: string; id: string}}}
+      }
+    }
+    expect(postPayload.data.type).toBe('betaBuildLocalizations')
+    expect(postPayload.data.attributes.locale).toBe('en-US')
+    expect(postPayload.data.attributes.whatsNew).toBe(
+      'What testers should look at'
+    )
+    expect(postPayload.data.relationships.build.data).toEqual({
+      type: 'builds',
+      id: 'build-id'
+    })
+    expect(info).toHaveBeenCalledWith(
+      'Successfully created TestFlight release note.'
+    )
   })
 })

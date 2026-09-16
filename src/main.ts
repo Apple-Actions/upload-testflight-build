@@ -75,6 +75,8 @@ async function run(): Promise<void> {
       execOptions
     )
     info(`Upload finished via backend: ${result.backend}`)
+    setOutput('upload-backend', result.backend)
+
     await submitBuildMetadataUpdates({
       releaseNotes,
       usesNonExemptEncryptionInput,
@@ -86,12 +88,11 @@ async function run(): Promise<void> {
       apiPrivateKey
     })
     info('Release notes step completed (or skipped).')
-    await deleteAllPrivateKeys()
-    info('Private keys cleaned up.')
-
-    setOutput('upload-backend', result.backend)
   } catch (error: unknown | Error) {
     setFailed((error as Error).message || 'An unknown error occurred.')
+  } finally {
+    await deleteAllPrivateKeys()
+    info('Private keys cleaned up.')
   }
 }
 

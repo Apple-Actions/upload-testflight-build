@@ -4,7 +4,18 @@ import {extractAppMetadata} from './utils/appMetadata'
 import {buildPlatform, fetchJson} from './utils/http'
 import {lookupAppId} from './utils/lookup-app-id'
 import {lookupBuildIdWithRetry} from './utils/buildLookup'
-import {pollUntil} from './utils/poll'
+
+const NOTES_ATTACH_PREFIX =
+  'The IPA already uploaded and processing is VALID, but attaching TestFlight "What to Test" failed'
+
+type BetaAppLocalization = {
+  id?: string
+  attributes?: {locale?: string}
+}
+
+type BetaBuildLocalization = {
+  id?: string
+}
 
 export async function submitBuildMetadataUpdates(params: {
   releaseNotes: string
@@ -64,8 +75,12 @@ export async function submitBuildMetadataUpdates(params: {
     }
   )
   if (wantsReleaseNotes) {
-    const localizationId = await lookupLocalizationId(buildId, token)
-    await updateReleaseNotes(localizationId, trimmed, token)
+    const locale = await requireTestInformationLocale(
+      appId,
+      metadata.bundleId,
+      token
+    )
+    await attachReleaseNotes(buildId, locale, trimmed, token)
   }
   if (wantsEncryptionUpdate) {
     await updateEncryptionCompliance(
@@ -76,44 +91,121 @@ export async function submitBuildMetadataUpdates(params: {
   }
 }
 
-async function lookupLocalizationId(
-  buildId: string,
+async function requireTestInformationLocale(
+  appId: string,
+  bundleId: string,
   token: string
 ): Promise<string> {
-  const MAX_ATTEMPTS = 20
-  const RETRY_DELAY_MS = 30000
-
-  const result = await pollUntil(
-    async () => {
-      const response = await fetchJson<{
-        data?: Array<{id?: string}>
-      }>(
-        // Docs: https://developer.apple.com/documentation/appstoreconnectapi/betabuildlocalizations
-        `/builds/${buildId}/betaBuildLocalizations`,
-        token,
-        'Failed to query beta build localizations.'
-      )
-
-      return response.data?.[0]?.id
-    },
-    Boolean,
-    {
-      attempts: MAX_ATTEMPTS,
-      delayMs: RETRY_DELAY_MS,
-      onRetry: attempt => {
-        warning(
-          `Localization not ready for build ${buildId} (attempt ${attempt + 1}/${MAX_ATTEMPTS}). Retrying in ${Math.round(RETRY_DELAY_MS / 1000)}s`
-        )
-      }
-    }
+  const response = await fetchJson<{data?: BetaAppLocalization[]}>(
+    // Docs: https://developer.apple.com/documentation/appstoreconnectapi/list-beta-app-localizations-for-an-app
+    `/apps/${appId}/betaAppLocalizations`,
+    token,
+    `${NOTES_ATTACH_PREFIX}: Failed to query Test Information.`
   )
 
-  return result
+  const localizations = response.data ?? []
+  if (localizations.length === 0) {
+    throw new Error(
+      `${NOTES_ATTACH_PREFIX}: Test Information is missing for app ${appId} (bundle id ${bundleId}). Fill App Store Connect → TestFlight → Test Information for the app (Beta App Description, Feedback Email, primary locale), or run scripts/populate-test-information.sh --apply with --issuer-id, --api-key-id, and --api-private-key-path.`
+    )
+  }
+
+  const locale = localizations[0]?.attributes?.locale?.trim()
+  if (!locale) {
+    throw new Error(
+      `${NOTES_ATTACH_PREFIX}: Test Information for app ${appId} (bundle id ${bundleId}) has no locale.`
+    )
+  }
+
+  return locale
+}
+
+async function attachReleaseNotes(
+  buildId: string,
+  locale: string,
+  releaseNotes: string,
+  token: string
+): Promise<void> {
+  const whatsNew = releaseNotes.slice(0, 4000)
+  const existingId = await fetchBuildLocalizationId(buildId, token)
+  if (existingId) {
+    await updateReleaseNotes(existingId, whatsNew, token)
+    return
+  }
+
+  try {
+    await createReleaseNotes(buildId, locale, whatsNew, token)
+  } catch (error: unknown) {
+    if (!isConflictError(error)) {
+      throw error
+    }
+
+    const racedId = await fetchBuildLocalizationId(buildId, token)
+    if (!racedId) {
+      throw new Error(
+        `${NOTES_ATTACH_PREFIX}: a beta build localization never appeared for build ${buildId}. ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    }
+
+    await updateReleaseNotes(racedId, whatsNew, token)
+  }
+}
+
+async function fetchBuildLocalizationId(
+  buildId: string,
+  token: string
+): Promise<string | undefined> {
+  const response = await fetchJson<{data?: BetaBuildLocalization[]}>(
+    // Docs: https://developer.apple.com/documentation/appstoreconnectapi/betabuildlocalizations
+    `/builds/${buildId}/betaBuildLocalizations`,
+    token,
+    `${NOTES_ATTACH_PREFIX}: Failed to query beta build localizations.`
+  )
+
+  const localizationId = response.data?.[0]?.id
+  return localizationId || undefined
+}
+
+async function createReleaseNotes(
+  buildId: string,
+  locale: string,
+  whatsNew: string,
+  token: string
+): Promise<void> {
+  const payload = {
+    data: {
+      type: 'betaBuildLocalizations',
+      attributes: {
+        locale,
+        whatsNew
+      },
+      relationships: {
+        build: {
+          data: {
+            type: 'builds',
+            id: buildId
+          }
+        }
+      }
+    }
+  }
+
+  await fetchJson(
+    // Docs: https://developer.apple.com/documentation/appstoreconnectapi/post-v1-betabuildlocalizations
+    '/betaBuildLocalizations',
+    token,
+    `${NOTES_ATTACH_PREFIX}: Failed to create TestFlight release note.`,
+    'POST',
+    payload
+  )
+  info('Successfully created TestFlight release note.')
 }
 
 async function updateReleaseNotes(
   localizationId: string,
-  releaseNotes: string,
+  whatsNew: string,
   token: string
 ): Promise<void> {
   const payload = {
@@ -121,7 +213,7 @@ async function updateReleaseNotes(
       id: localizationId,
       type: 'betaBuildLocalizations',
       attributes: {
-        whatsNew: releaseNotes.slice(0, 4000)
+        whatsNew
       }
     }
   }
@@ -130,7 +222,7 @@ async function updateReleaseNotes(
     // Docs: https://developer.apple.com/documentation/appstoreconnectapi/betabuildlocalizations
     `/betaBuildLocalizations/${localizationId}`,
     token,
-    'Failed to update TestFlight release note.',
+    `${NOTES_ATTACH_PREFIX}: Failed to update TestFlight release note.`,
     'PATCH',
     payload
   )
@@ -161,6 +253,10 @@ async function updateEncryptionCompliance(
   info(
     `Set usesNonExemptEncryption=${usesNonExemptEncryption} for build ${buildId}.`
   )
+}
+
+function isConflictError(error: unknown): boolean {
+  return error instanceof Error && /\(409\)/.test(error.message)
 }
 
 function parseUsesNonExemptEncryption(value?: string): boolean | undefined {
