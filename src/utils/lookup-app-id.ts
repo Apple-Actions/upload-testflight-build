@@ -1,8 +1,8 @@
-import {fetchJson} from './http'
+import {fetchJson, type TokenSource} from './http'
 
 export async function lookupAppId(
   bundleId: string,
-  token: string
+  token: TokenSource
 ): Promise<string> {
   const params = new URLSearchParams()
   params.set('filter[bundleId]', bundleId)

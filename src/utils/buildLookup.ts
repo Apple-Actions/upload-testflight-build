@@ -1,11 +1,11 @@
-import {fetchJson} from './http'
+import {fetchJson, type TokenSource} from './http'
 import {pollUntil, pollWithBackoff} from './poll'
 
 type BuildLookupParams = {
   appId: string
   buildNumber: string
   platform: string
-  token: string
+  token: TokenSource
 }
 
 const DEFAULT_ATTEMPTS = 20
