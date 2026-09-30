@@ -36,7 +36,42 @@ describe('fetchJson retries', () => {
     // retries=1 allows 2 total attempts; ensure no extra calls occurred
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
+
+  it('signs a fresh bearer token on every attempt', async () => {
+    fetchMock
+      .mockResolvedValueOnce(makeResponse(503, 'Service Unavailable'))
+      .mockResolvedValueOnce(makeJsonResponse({ok: true}))
+
+    const tokens = ['first-token', 'second-token']
+    let issued = 0
+    const token = () => tokens[issued++]
+
+    const result = await fetchJson(
+      '/test',
+      token,
+      'error',
+      'GET',
+      undefined,
+      undefined,
+      {
+        retries: 1,
+        baseDelayMs: 1,
+        factor: 1
+      }
+    )
+
+    expect(result).toEqual({ok: true})
+    expect(issued).toBe(2)
+    expect(authorizationHeader(0)).toBe('Bearer first-token')
+    expect(authorizationHeader(1)).toBe('Bearer second-token')
+  })
 })
+
+function authorizationHeader(call: number): string | undefined {
+  const init = fetchMock.mock.calls[call]?.[1] as RequestInit | undefined
+  const headers = init?.headers as Record<string, string> | undefined
+  return headers?.Authorization
+}
 
 function makeResponse(status: number, statusText: string): Response {
   return new Response('fail', {status, statusText})

@@ -10,9 +10,15 @@ type RetryOptions = {
   factor: number
 }
 
+export type TokenSource = string | (() => string)
+
+function resolveToken(token: TokenSource): string {
+  return typeof token === 'function' ? token() : token
+}
+
 export async function fetchJson<T = unknown>(
   path: string,
-  token: string,
+  token: TokenSource,
   errorMessage: string,
   method: 'GET' | 'POST' | 'PATCH' = 'GET',
   body?: unknown,
@@ -21,32 +27,33 @@ export async function fetchJson<T = unknown>(
 ): Promise<T> {
   const normalizedPath = path.startsWith('/') ? path.slice(1) : path
   const url = new URL(normalizedPath, `${BASE_URL}/`)
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-    'Accept-Language': 'en',
-    ...extraHeaders
-  }
-
-  const safeHeaders = {
-    ...headers,
-    Authorization: headers.Authorization ? '[REDACTED]' : undefined
-  }
-
   const stringifiedBody = body ? JSON.stringify(body) : undefined
-  debug(
-    `HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(
-      safeHeaders
-    )} body=${stringifiedBody ?? '<none>'}`
-  )
 
   const response = await performWithRetry(
-    () =>
-      fetch(url, {
+    () => {
+      const headers = {
+        Authorization: `Bearer ${resolveToken(token)}`,
+        'Content-Type': 'application/json',
+        'Accept-Language': 'en',
+        ...extraHeaders
+      }
+
+      const safeHeaders = {
+        ...headers,
+        Authorization: headers.Authorization ? '[REDACTED]' : undefined
+      }
+      debug(
+        `HTTP request: ${method} ${url.toString()} headers=${JSON.stringify(
+          safeHeaders
+        )} body=${stringifiedBody ?? '<none>'}`
+      )
+
+      return fetch(url, {
         method,
         headers,
         body: stringifiedBody
-      }),
+      })
+    },
     retryOptions,
     `${method} ${url.toString()}`
   )

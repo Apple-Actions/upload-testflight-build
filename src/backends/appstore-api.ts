@@ -3,7 +3,7 @@ import {statSync, promises as fs} from 'fs'
 import {warning, info, debug} from '@actions/core'
 import {UploadParams, UploadResult, Uploader} from './types'
 import {generateJwt} from '../auth/jwt'
-import {buildPlatform, fetchJson} from '../utils/http'
+import {buildPlatform, fetchJson, type TokenSource} from '../utils/http'
 import {extractAppMetadata} from '../utils/appMetadata'
 import {lookupAppId} from '../utils/lookup-app-id'
 import {waitForBuildProcessing} from '../utils/buildLookup'
@@ -16,11 +16,8 @@ const VISIBILITY_DELAY_MS = 60000 // 1 minute initial wait before polling visibi
 export const appstoreApi: Uploader = {
   async upload(params: UploadParams): Promise<UploadResult> {
     info('Starting App Store API upload backend.')
-    const token = generateJwt(
-      params.issuerId,
-      params.apiKeyId,
-      params.apiPrivateKey
-    )
+    const token = () =>
+      generateJwt(params.issuerId, params.apiKeyId, params.apiPrivateKey)
     const metadata = await extractAppMetadata(params.appPath)
     debug(
       `Extracted metadata: bundleId=${metadata.bundleId}, buildNumber=${metadata.buildNumber}, shortVersion=${metadata.shortVersion}`
@@ -95,7 +92,7 @@ async function createBuildUpload(
     fileName: string
     fileSize: number
   },
-  token: string
+  token: TokenSource
 ): Promise<BuildUpload> {
   const payload = {
     data: {
@@ -176,7 +173,7 @@ async function createBuildUploadFile(
   uploadId: string,
   fileName: string,
   fileSize: number,
-  token: string
+  token: TokenSource
 ): Promise<{fileId: string; uploadOperations: UploadOperation[]}> {
   const response = await fetchJson<{
     data?: {
@@ -260,7 +257,7 @@ async function performUpload(
 
 async function completeBuildUpload(
   fileId: string,
-  token: string
+  token: TokenSource
 ): Promise<void> {
   await fetchJson(
     // Docs: https://developer.apple.com/documentation/appstoreconnectapi/build-upload-files
@@ -284,7 +281,7 @@ async function pollBuildProcessing(params: {
   appId: string
   buildNumber: string
   platform: string
-  token: string
+  token: TokenSource
 }): Promise<void> {
   await waitForBuildProcessing(params, {
     visibilityAttempts: VISIBILITY_ATTEMPTS,

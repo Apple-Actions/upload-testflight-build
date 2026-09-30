@@ -1,7 +1,7 @@
 import {info, warning} from '@actions/core'
 import {generateJwt} from './auth/jwt'
 import {extractAppMetadata} from './utils/appMetadata'
-import {buildPlatform, fetchJson} from './utils/http'
+import {buildPlatform, fetchJson, type TokenSource} from './utils/http'
 import {lookupAppId} from './utils/lookup-app-id'
 import {lookupBuildIdWithRetry} from './utils/buildLookup'
 
@@ -49,11 +49,8 @@ export async function submitBuildMetadataUpdates(params: {
   }
 
   const metadata = await extractAppMetadata(params.appPath)
-  const token = generateJwt(
-    params.issuerId,
-    params.apiKeyId,
-    params.apiPrivateKey
-  )
+  const token = () =>
+    generateJwt(params.issuerId, params.apiKeyId, params.apiPrivateKey)
   const platform = buildPlatform(params.appType)
 
   const appId = await lookupAppId(metadata.bundleId, token)
@@ -94,7 +91,7 @@ export async function submitBuildMetadataUpdates(params: {
 async function requireTestInformationLocale(
   appId: string,
   bundleId: string,
-  token: string
+  token: TokenSource
 ): Promise<string> {
   const response = await fetchJson<{data?: BetaAppLocalization[]}>(
     // Docs: https://developer.apple.com/documentation/appstoreconnectapi/list-beta-app-localizations-for-an-app
@@ -124,7 +121,7 @@ async function attachReleaseNotes(
   buildId: string,
   locale: string,
   releaseNotes: string,
-  token: string
+  token: TokenSource
 ): Promise<void> {
   const whatsNew = releaseNotes.slice(0, 4000)
   const existingId = await fetchBuildLocalizationId(buildId, token)
@@ -155,7 +152,7 @@ async function attachReleaseNotes(
 
 async function fetchBuildLocalizationId(
   buildId: string,
-  token: string
+  token: TokenSource
 ): Promise<string | undefined> {
   const response = await fetchJson<{data?: BetaBuildLocalization[]}>(
     // Docs: https://developer.apple.com/documentation/appstoreconnectapi/betabuildlocalizations
@@ -172,7 +169,7 @@ async function createReleaseNotes(
   buildId: string,
   locale: string,
   whatsNew: string,
-  token: string
+  token: TokenSource
 ): Promise<void> {
   const payload = {
     data: {
@@ -206,7 +203,7 @@ async function createReleaseNotes(
 async function updateReleaseNotes(
   localizationId: string,
   whatsNew: string,
-  token: string
+  token: TokenSource
 ): Promise<void> {
   const payload = {
     data: {
@@ -232,7 +229,7 @@ async function updateReleaseNotes(
 async function updateEncryptionCompliance(
   buildId: string,
   usesNonExemptEncryption: boolean,
-  token: string
+  token: TokenSource
 ): Promise<void> {
   await fetchJson(
     // Docs: https://developer.apple.com/documentation/appstoreconnectapi/builds
