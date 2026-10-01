@@ -1496,19 +1496,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"big-integer@npm:1.6.x":
-  version: 1.6.52
-  resolution: "big-integer@npm:1.6.52"
-  checksum: 10c0/9604224b4c2ab3c43c075d92da15863077a9f59e5d4205f4e7e76acd0cd47e8d469ec5e5dba8d9b32aa233951893b29329ca56ac80c20ce094b4a647a66abae0
-  languageName: node
-  linkType: hard
-
-"bplist-parser@npm:~0.3.0":
-  version: 0.3.2
-  resolution: "bplist-parser@npm:0.3.2"
-  dependencies:
-    big-integer: "npm:1.6.x"
-  checksum: 10c0/4dc307c11d2511a01255e87e370d4ab6f1962b35fdc27605fd4ce9a557a259c2dc9f87822617ddb1f7aa062a71e30ef20d6103329ac7ce235628f637fb0ed763
+"bplist-parser@npm:~0.5.0":
+  version: 0.5.0
+  resolution: "bplist-parser@npm:0.5.0"
+  checksum: 10c0/c0641aa57bc925751c5ff3c0689d62c7f0404a52431cc2ebb2aa1a4abaadf3970b9dcb010207a771cd72ed6bd3b13f4ea17b0af4da537ae4a52d7737cc1f053b
   languageName: node
   linkType: hard
 
@@ -4626,7 +4617,7 @@ __metadata:
     "@actions/io": "npm:~3.0.0"
     "@types/node": "npm:~24.12.0"
     adm-zip: "npm:~0.6.0"
-    bplist-parser: "npm:~0.3.0"
+    bplist-parser: "npm:~0.5.0"
     esbuild: "npm:~0.28.0"
     eslint: "npm:~9.39.0"
     eslint-plugin-github: "npm:~6.1.2"
