@@ -1,6 +1,6 @@
 import AdmZip from 'adm-zip'
 import {parse as parsePlist} from 'plist'
-import bplist from 'bplist-parser'
+import {parseBuffer} from 'bplist-parser'
 
 type AppMetadata = {
   bundleId: string
@@ -42,7 +42,7 @@ function parsePlistBuffer(buffer: Buffer): Record<string, string> {
     buffer.length >= 6 && buffer.subarray(0, 6).toString('utf8') === 'bplist'
 
   if (isBinary) {
-    const parsed = bplist.parseBuffer(buffer)
+    const parsed = parseBuffer(buffer)
     return (parsed[0] ?? {}) as Record<string, string>
   }
 
