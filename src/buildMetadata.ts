@@ -17,6 +17,11 @@ type BetaBuildLocalization = {
   id?: string
 }
 
+export type MetadataOutcome = {
+  status: 'skipped' | 'notes-created' | 'notes-updated' | 'encryption-only'
+  summary: string
+}
+
 export async function submitBuildMetadataUpdates(params: {
   releaseNotes: string
   usesNonExemptEncryptionInput?: string
@@ -26,7 +31,7 @@ export async function submitBuildMetadataUpdates(params: {
   apiKeyId: string
   apiPrivateKey: string
   waitForProcessing?: boolean
-}): Promise<void> {
+}): Promise<MetadataOutcome> {
   const trimmed = params.releaseNotes.trim()
   const wantsReleaseNotes = trimmed !== ''
   const parsedEncryption = parseUsesNonExemptEncryption(
@@ -38,14 +43,22 @@ export async function submitBuildMetadataUpdates(params: {
     info(
       'No release note or encryption compliance requested. Skipping TestFlight metadata update.'
     )
-    return
+    return {
+      status: 'skipped',
+      summary:
+        'TestFlight metadata skipped: no release notes or encryption compliance requested.'
+    }
   }
 
   if (params.waitForProcessing === false) {
     info(
       'wait-for-processing=false; skipping release notes and encryption updates because build visibility is not guaranteed.'
     )
-    return
+    return {
+      status: 'skipped',
+      summary:
+        'TestFlight metadata skipped: wait-for-processing=false, so release notes and encryption compliance were not applied.'
+    }
   }
 
   const metadata = await extractAppMetadata(params.appPath)
@@ -71,13 +84,14 @@ export async function submitBuildMetadataUpdates(params: {
       )
     }
   )
+  let notesResult: 'created' | 'updated' | undefined
   if (wantsReleaseNotes) {
     const locale = await requireTestInformationLocale(
       appId,
       metadata.bundleId,
       token
     )
-    await attachReleaseNotes(buildId, locale, trimmed, token)
+    notesResult = await attachReleaseNotes(buildId, locale, trimmed, token)
   }
   if (wantsEncryptionUpdate) {
     await updateEncryptionCompliance(
@@ -85,6 +99,26 @@ export async function submitBuildMetadataUpdates(params: {
       parsedEncryption as boolean,
       token
     )
+  }
+
+  const encryptionSuffix = wantsEncryptionUpdate
+    ? ` Set usesNonExemptEncryption=${parsedEncryption}.`
+    : ''
+  if (notesResult === 'created') {
+    return {
+      status: 'notes-created',
+      summary: `Created TestFlight release note for build ${buildId}.${encryptionSuffix}`
+    }
+  }
+  if (notesResult === 'updated') {
+    return {
+      status: 'notes-updated',
+      summary: `Updated existing TestFlight release note for build ${buildId}.${encryptionSuffix}`
+    }
+  }
+  return {
+    status: 'encryption-only',
+    summary: `No release notes requested.${encryptionSuffix}`
   }
 }
 
@@ -122,16 +156,17 @@ async function attachReleaseNotes(
   locale: string,
   releaseNotes: string,
   token: TokenSource
-): Promise<void> {
+): Promise<'created' | 'updated'> {
   const whatsNew = releaseNotes.slice(0, 4000)
   const existingId = await fetchBuildLocalizationId(buildId, token)
   if (existingId) {
     await updateReleaseNotes(existingId, whatsNew, token)
-    return
+    return 'updated'
   }
 
   try {
     await createReleaseNotes(buildId, locale, whatsNew, token)
+    return 'created'
   } catch (error: unknown) {
     if (!isConflictError(error)) {
       throw error
@@ -147,6 +182,7 @@ async function attachReleaseNotes(
     }
 
     await updateReleaseNotes(racedId, whatsNew, token)
+    return 'updated'
   }
 }
 

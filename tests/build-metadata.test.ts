@@ -74,7 +74,7 @@ describe('release notes submission', () => {
   })
 
   it('logs and exits early when neither release notes nor encryption flag provided', async () => {
-    await submitBuildMetadataUpdates({
+    const outcome = await submitBuildMetadataUpdates({
       releaseNotes: '   ',
       usesNonExemptEncryptionInput: undefined,
       appPath: 'path/to/app.ipa',
@@ -84,6 +84,7 @@ describe('release notes submission', () => {
       apiPrivateKey: 'PRIVATE_KEY'
     })
 
+    expect(outcome.status).toBe('skipped')
     expect(info).toHaveBeenCalledWith(
       'No release note or encryption compliance requested. Skipping TestFlight metadata update.'
     )
@@ -160,7 +161,7 @@ describe('release notes submission', () => {
       }
     )
 
-    await submitBuildMetadataUpdates({
+    const outcome = await submitBuildMetadataUpdates({
       releaseNotes: longNotes,
       appPath: 'path/to/app.ipa',
       appType: 'ios',
@@ -169,6 +170,10 @@ describe('release notes submission', () => {
       apiPrivateKey: 'PRIVATE_KEY'
     })
 
+    expect(outcome).toEqual({
+      status: 'notes-updated',
+      summary: 'Updated existing TestFlight release note for build build-id.'
+    })
     expect(fetchMock).toHaveBeenCalledTimes(5)
     expect(
       observedAuthHeaders.every(header => header.startsWith('Bearer '))
@@ -237,7 +242,7 @@ describe('release notes submission', () => {
       }
     )
 
-    await submitBuildMetadataUpdates({
+    const outcome = await submitBuildMetadataUpdates({
       releaseNotes: '   ',
       usesNonExemptEncryptionInput: 'false',
       appPath: 'path/to/app.ipa',
@@ -247,6 +252,10 @@ describe('release notes submission', () => {
       apiPrivateKey: 'PRIVATE_KEY'
     })
 
+    expect(outcome).toEqual({
+      status: 'encryption-only',
+      summary: 'No release notes requested. Set usesNonExemptEncryption=false.'
+    })
     expect(execMock).not.toHaveBeenCalled()
     expect(fetchMock).toHaveBeenCalledTimes(3)
     const patchPayload = observedPatchBody[0] as {
@@ -357,13 +366,18 @@ describe('release notes submission', () => {
       }
     )
 
-    await submitBuildMetadataUpdates({
+    const outcome = await submitBuildMetadataUpdates({
       releaseNotes: 'What testers should look at',
       appPath: 'path/to/app.ipa',
       appType: 'ios',
       issuerId: 'issuer-id',
       apiKeyId: 'api-key-id',
       apiPrivateKey: 'PRIVATE_KEY'
+    })
+
+    expect(outcome).toEqual({
+      status: 'notes-created',
+      summary: 'Created TestFlight release note for build build-id.'
     })
 
     const postPayload = observedPostBody as {

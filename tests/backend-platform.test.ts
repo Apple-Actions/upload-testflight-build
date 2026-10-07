@@ -10,7 +10,11 @@ const warningMock = vi.hoisted(() => vi.fn())
 const installPrivateKeyMock = vi.hoisted(() => vi.fn())
 const deletePrivateKeysMock = vi.hoisted(() => vi.fn())
 const submitBuildMetadataUpdatesMock = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(undefined)
+  vi.fn().mockResolvedValue({
+    status: 'skipped',
+    summary:
+      'TestFlight metadata skipped: no release notes or encryption compliance requested.'
+  })
 )
 
 const appstoreUploadMock = vi.hoisted(() => vi.fn())
@@ -101,6 +105,9 @@ describe('backend platform guard', () => {
 
     expect(setFailedMock).not.toHaveBeenCalled()
     expect(appstoreUploadMock).toHaveBeenCalled()
+    expect(infoMock).toHaveBeenCalledWith(
+      'TestFlight metadata skipped: no release notes or encryption compliance requested.'
+    )
   })
 
   it('rejects transporter on linux', async () => {

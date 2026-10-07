@@ -77,7 +77,7 @@ async function run(): Promise<void> {
     info(`Upload finished via backend: ${result.backend}`)
     setOutput('upload-backend', result.backend)
 
-    await submitBuildMetadataUpdates({
+    const metadataOutcome = await submitBuildMetadataUpdates({
       releaseNotes,
       usesNonExemptEncryptionInput,
       waitForProcessing,
@@ -87,7 +87,7 @@ async function run(): Promise<void> {
       apiKeyId,
       apiPrivateKey
     })
-    info('Release notes step completed (or skipped).')
+    info(metadataOutcome.summary)
   } catch (error: unknown | Error) {
     setFailed((error as Error).message || 'An unknown error occurred.')
   } finally {
