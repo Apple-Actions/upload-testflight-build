@@ -10,6 +10,8 @@ export type UploadParams = {
   apiPrivateKey: string
   transporterExecutablePath?: string
   waitForProcessing?: boolean
+  uploadAttempts?: number
+  uploadTimeoutMinutes?: number
 }
 
 export type UploadResult = {

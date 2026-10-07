@@ -80,6 +80,15 @@ The script looks for `.apple-actions/test-information.json`, then Expo `app.json
 > [!NOTE]
 > The default `appstore-api` backend only supports `.ipa` uploads. For macOS (`.pkg`) builds, set `backend: altool` or `backend: transporter`.
 
+> [!NOTE]
+> After a dropped connection, `altool` can retry the same upload part forever (`WILL RETRY PART 1. Checksums do not match.`). The `altool` backend watches for this, kills `altool`, clears its saved resume state, and starts a fresh upload. `upload-attempts` (default `2`) sets how many runs to try. `upload-timeout-minutes` optionally caps each run and is handled the same way.
+>
+> ```yaml
+>     backend: altool
+>     upload-attempts: '3' # optional
+>     upload-timeout-minutes: '20' # optional
+> ```
+
 ## Upgrading from v3 or earlier v4
 
 * The default upload backend is now `appstore-api` (uses the App Store Connect API directly and works on Linux and macOS runners). If you depended on the previous behavior, set `backend: altool` or `backend: transporter`.
