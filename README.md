@@ -78,7 +78,7 @@ The script looks for `.apple-actions/test-information.json`, then Expo `app.json
 > Alternatively, use a self-hosted runner that already has Transporter installed at `/usr/local/itms/bin/iTMSTransporter`.
 
 > [!NOTE]
-> The default `appstore-api` backend only supports `.ipa` uploads. For macOS (`.pkg`) builds, set `backend: altool` or `backend: transporter`.
+> The default `appstore-api` backend only supports `.ipa` uploads. For macOS (`.pkg`) builds, set `backend: altool` or `backend: transporter`. `release-notes` and `uses-non-exempt-encryption` work for `.pkg` uploads too: the action reads the bundle ID and build number from the top-level app's `Contents/Info.plist` inside the package.
 
 ## Upgrading from v3 or earlier v4
 

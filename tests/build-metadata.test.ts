@@ -1,6 +1,8 @@
 import {afterAll, afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {info, warning} from '@actions/core'
 import {createSign} from 'crypto'
+import {mkdir, writeFile} from 'fs/promises'
+import {join} from 'path'
 import {submitBuildMetadataUpdates} from '../src/buildMetadata'
 
 const infoMock = vi.hoisted(() => vi.fn())
@@ -399,5 +401,76 @@ describe('release notes submission', () => {
     expect(info).toHaveBeenCalledWith(
       'Successfully created TestFlight release note.'
     )
+  })
+
+  it('reads a macOS .pkg and looks up the MAC_OS build', async () => {
+    const macPlistXml = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+  <dict>
+    <key>CFBundleIdentifier</key><string>com.example.mac</string>
+    <key>CFBundleVersion</key><string>42</string>
+    <key>CFBundleShortVersionString</key><string>3.1</string>
+  </dict>
+</plist>
+`
+    execMock.mockImplementation(async (_command: string, args: string[]) => {
+      const appContents = join(args[2], 'Foo.pkg/Payload/Foo.app/Contents')
+      await mkdir(appContents, {recursive: true})
+      await writeFile(join(appContents, 'Info.plist'), macPlistXml)
+      return 0
+    })
+
+    const requestedUrls: URL[] = []
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const url = input instanceof URL ? input : new URL(String(input))
+      requestedUrls.push(url)
+      const path = url.pathname
+      const data =
+        path === '/apps' || path === '/v1/apps'
+          ? {
+              data: [{id: 'app-id', attributes: {bundleId: 'com.example.mac'}}]
+            }
+          : path === '/builds' || path === '/v1/builds'
+            ? {data: [{id: 'build-id'}]}
+            : {data: []}
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {get: () => 'application/json'},
+        json: async () => data,
+        text: async () => JSON.stringify(data)
+      }
+    })
+
+    const outcome = await submitBuildMetadataUpdates({
+      releaseNotes: '',
+      usesNonExemptEncryptionInput: 'false',
+      appPath: '/builds/ScoreboardNDI.pkg',
+      appType: 'macos',
+      issuerId: 'issuer-id',
+      apiKeyId: 'api-key-id',
+      apiPrivateKey: 'PRIVATE_KEY'
+    })
+
+    expect(outcome.status).toBe('encryption-only')
+    expect(admZipMock).not.toHaveBeenCalled()
+    expect(execMock).toHaveBeenCalledWith(
+      'pkgutil',
+      ['--expand-full', '/builds/ScoreboardNDI.pkg', expect.any(String)],
+      {silent: true}
+    )
+
+    const appsUrl = requestedUrls.find(url => url.pathname.endsWith('/apps'))
+    expect(appsUrl?.searchParams.get('filter[bundleId]')).toBe(
+      'com.example.mac'
+    )
+    const buildsUrl = requestedUrls.find(url =>
+      url.pathname.endsWith('/builds')
+    )
+    expect(buildsUrl?.searchParams.get('filter[version]')).toBe('42')
+    expect(
+      buildsUrl?.searchParams.get('filter[preReleaseVersion.platform]')
+    ).toBe('MAC_OS')
   })
 })

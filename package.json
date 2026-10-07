@@ -52,6 +52,9 @@
   "knip": {
     "ignore": [
       "scripts/undici-stub.mjs"
+    ],
+    "ignoreBinaries": [
+      "pkgbuild"
     ]
   }
 }
