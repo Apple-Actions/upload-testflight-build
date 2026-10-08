@@ -38,7 +38,7 @@ Issuer ID: [App Store Connect → Users and Access → Integrations → App Stor
 ```
 
 > [!NOTE]
-> Attaching `release-notes` requires TestFlight **Test Information** (Beta App Description, Feedback Email, and a primary locale) to be filled in App Store Connect. If notes cannot be attached after a successful upload, the action fails and the error explains how to fix it (for example, missing Test Information) instead of a generic polling timeout.
+> Attaching `release-notes` requires TestFlight **Test Information** (Beta App Description, Feedback Email, and a primary locale) to be filled in App Store Connect. If notes cannot be attached after a successful upload, the action fails and the error explains how to fix it (for example, missing Test Information) instead of a generic polling timeout. Problems that can be caught locally, such as an app file whose `Info.plist` can't be read or an invalid `uses-non-exempt-encryption` value, fail the step before anything is uploaded.
 
 Populate Test Information from your app repo (bundle id, description, and feedback email) with the same credential flags as [`download-provisioning-profiles`](https://github.com/Apple-Actions/download-provisioning-profiles) (`curl`, `jq`, `openssl`, and `python3`). The script prints what it would write; pass `--apply` to send it to App Store Connect:
 

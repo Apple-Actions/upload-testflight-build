@@ -9,6 +9,9 @@ const warningMock = vi.hoisted(() => vi.fn())
 
 const installPrivateKeyMock = vi.hoisted(() => vi.fn())
 const deletePrivateKeysMock = vi.hoisted(() => vi.fn())
+const prepareBuildMetadataMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({skip: {status: 'skipped', summary: ''}})
+)
 const submitBuildMetadataUpdatesMock = vi.hoisted(() =>
   vi.fn().mockResolvedValue({
     status: 'skipped',
@@ -81,6 +84,7 @@ vi.mock('../src/backends/altool', () => ({
 }))
 
 vi.mock('../src/buildMetadata', () => ({
+  prepareBuildMetadata: prepareBuildMetadataMock,
   submitBuildMetadataUpdates: submitBuildMetadataUpdatesMock
 }))
 
@@ -155,6 +159,28 @@ describe('backend platform guard', () => {
 
     expect(setFailedMock).toHaveBeenCalledWith('Test Information is missing')
     expect(setOutputMock).toHaveBeenCalledWith('upload-backend', 'appstoreApi')
+    expect(deletePrivateKeysMock).toHaveBeenCalled()
+  })
+
+  it('fails before uploading when the app metadata cannot be read', async () => {
+    prepareBuildMetadataMock.mockRejectedValueOnce(
+      new Error('Unable to locate Info.plist inside the IPA Payload.')
+    )
+    getInputMock.mockImplementation((name: string) => {
+      if (name === 'backend') return 'appstore-api'
+      if (name === 'release-notes') return 'Notes'
+      return commonInput(name)
+    })
+
+    await import('../src/main')
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(setFailedMock).toHaveBeenCalledWith(
+      'Unable to locate Info.plist inside the IPA Payload.'
+    )
+    expect(appstoreUploadMock).not.toHaveBeenCalled()
+    expect(installPrivateKeyMock).not.toHaveBeenCalled()
+    expect(submitBuildMetadataUpdatesMock).not.toHaveBeenCalled()
     expect(deletePrivateKeysMock).toHaveBeenCalled()
   })
 })

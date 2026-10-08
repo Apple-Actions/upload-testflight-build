@@ -1,6 +1,6 @@
 import {getInput, setOutput, setFailed, info} from '@actions/core'
 import {platform} from 'os'
-import {submitBuildMetadataUpdates} from './buildMetadata'
+import {prepareBuildMetadata, submitBuildMetadataUpdates} from './buildMetadata'
 import {installPrivateKey, deleteAllPrivateKeys} from './utils/keys'
 import {UploadFactory} from './backends/types'
 import {transporter} from './backends/transporter'
@@ -82,6 +82,13 @@ async function run(): Promise<void> {
       )
     }
 
+    const metadataPlan = await prepareBuildMetadata({
+      releaseNotes,
+      usesNonExemptEncryptionInput,
+      waitForProcessing,
+      appPath
+    })
+
     const execOptions: ExecOptions = {}
 
     info('Installing API private key.')
@@ -104,11 +111,7 @@ async function run(): Promise<void> {
     info(`Upload finished via backend: ${result.backend}`)
     setOutput('upload-backend', result.backend)
 
-    const metadataOutcome = await submitBuildMetadataUpdates({
-      releaseNotes,
-      usesNonExemptEncryptionInput,
-      waitForProcessing,
-      appPath,
+    const metadataOutcome = await submitBuildMetadataUpdates(metadataPlan, {
       appType,
       issuerId,
       apiKeyId,
