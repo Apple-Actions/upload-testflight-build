@@ -9,6 +9,22 @@ import {appstoreApi} from './backends/appstore-api'
 import {normalizeBackend} from './utils/normalize-backend'
 import type {ExecOptions} from '@actions/exec'
 
+function parsePositiveNumber(
+  name: string,
+  value: string,
+  integer = false
+): number | undefined {
+  if (value.trim() === '') return undefined
+  const parsed = Number(value.trim())
+  const valid = integer ? Number.isInteger(parsed) : Number.isFinite(parsed)
+  if (!valid || parsed <= 0) {
+    throw new Error(
+      `Input "${name}" must be a positive ${integer ? 'integer' : 'number'} (got "${value}").`
+    )
+  }
+  return parsed
+}
+
 async function run(): Promise<void> {
   try {
     const issuerId: string = getInput('issuer-id')
@@ -28,6 +44,15 @@ async function run(): Promise<void> {
     const backendInput: string = getInput('backend') || 'appstore-api'
     const transporterExecutablePath: string | undefined =
       getInput('transporter-executable-path') || undefined
+    const uploadAttempts = parsePositiveNumber(
+      'upload-attempts',
+      getInput('upload-attempts'),
+      true
+    )
+    const uploadTimeoutMinutes = parsePositiveNumber(
+      'upload-timeout-minutes',
+      getInput('upload-timeout-minutes')
+    )
 
     const backend = normalizeBackend(backendInput)
     info(
@@ -70,7 +95,9 @@ async function run(): Promise<void> {
         issuerId,
         apiPrivateKey,
         waitForProcessing,
-        transporterExecutablePath
+        transporterExecutablePath,
+        uploadAttempts,
+        uploadTimeoutMinutes
       },
       execOptions
     )

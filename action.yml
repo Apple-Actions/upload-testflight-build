@@ -34,6 +34,13 @@ inputs:
   wait-for-processing:
     description: 'Boolean string. Set to "false" to skip waiting for App Store processing (metadata updates will be skipped when waiting is disabled).'
     required: false
+  upload-attempts:
+    description: 'altool backend only. How many fresh altool runs to try when an upload gets stuck (endless part retries or upload-timeout-minutes exceeded).'
+    required: false
+    default: '2'
+  upload-timeout-minutes:
+    description: 'altool backend only. Optional time limit in minutes for each altool upload attempt.'
+    required: false
 outputs:
   upload-backend:
     description: 'The backend that performed the upload'
