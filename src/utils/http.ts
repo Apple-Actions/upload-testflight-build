@@ -20,7 +20,7 @@ export async function fetchJson<T = unknown>(
   path: string,
   token: TokenSource,
   errorMessage: string,
-  method: 'GET' | 'POST' | 'PATCH' = 'GET',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
   body?: unknown,
   extraHeaders?: Record<string, string>,
   retryOptions: RetryOptions = DEFAULT_RETRY
