@@ -80,6 +80,33 @@ The script looks for `.apple-actions/test-information.json`, then Expo `app.json
 > [!NOTE]
 > The default `appstore-api` backend only supports `.ipa` uploads. For macOS (`.pkg`) builds, set `backend: altool` or `backend: transporter`. `release-notes` and `uses-non-exempt-encryption` work for `.pkg` uploads too: the action reads the bundle ID and build number from the top-level app's `Contents/Info.plist` inside the package.
 
+### macOS
+
+Upload the `.pkg` from an App Store export by [`Apple-Actions/xcodebuild`](https://github.com/Apple-Actions/xcodebuild#macos-mac-app-store-and-developer-id-from-one-archive) (v1.1.0 or later, which adds the `pkg-path` output). Use `backend: altool`: it is preinstalled with Xcode, unlike Transporter, and recovers from stuck uploads (see below).
+
+```yaml
+- id: build
+  uses: Apple-Actions/xcodebuild@v1
+  with:
+    project: App.xcodeproj
+    scheme: App
+    action: archive
+    archive-path: .build/Artifacts/App.xcarchive
+    export-options-plist: ExportOptions.plist
+
+- name: Upload app to TestFlight
+  uses: apple-actions/upload-testflight-build@v5
+  with:
+    app-path: ${{ steps.build.outputs.pkg-path }}
+    app-type: macos
+    backend: altool
+    issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+    api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+    api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+```
+
+See [`Apple-Actions/Example-macOS`](https://github.com/Apple-Actions/Example-macOS) for the full workflow, which also exports a Developer ID build from the same archive and [notarizes](https://github.com/Apple-Actions/notarize) it as a DMG. Signing identities come from [`import-codesign-certs`](https://github.com/Apple-Actions/import-codesign-certs) and profiles from [`download-provisioning-profiles`](https://github.com/Apple-Actions/download-provisioning-profiles#macos-app-store-and-developer-id).
+
 > [!NOTE]
 > After a dropped connection, `altool` can retry the same upload part forever (`WILL RETRY PART 1. Checksums do not match.`). The `altool` backend watches for this, kills `altool` and its child processes, deletes the abandoned App Store Connect build upload, clears `altool`'s saved resume state, and starts a fresh upload. `upload-attempts` (default `2`) sets how many runs to try. `upload-timeout-minutes` optionally caps each run and is handled the same way.
 >
