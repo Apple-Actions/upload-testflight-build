@@ -78,7 +78,7 @@ The script looks for `.apple-actions/test-information.json`, then Expo `app.json
 > Alternatively, use a self-hosted runner that already has Transporter installed at `/usr/local/itms/bin/iTMSTransporter`.
 
 > [!NOTE]
-> The default `appstore-api` backend only supports `.ipa` uploads. For macOS (`.pkg`) builds, set `backend: altool` or `backend: transporter`.
+> The default `appstore-api` backend only supports `.ipa` uploads. For macOS (`.pkg`) builds, set `backend: altool` or `backend: transporter`. `release-notes` and `uses-non-exempt-encryption` work for `.pkg` uploads too: the action reads the bundle ID and build number from the top-level app's `Contents/Info.plist` inside the package.
 
 > [!NOTE]
 > After a dropped connection, `altool` can retry the same upload part forever (`WILL RETRY PART 1. Checksums do not match.`). The `altool` backend watches for this, kills `altool` and its child processes, deletes the abandoned App Store Connect build upload, clears `altool`'s saved resume state, and starts a fresh upload. `upload-attempts` (default `2`) sets how many runs to try. `upload-timeout-minutes` optionally caps each run and is handled the same way.
