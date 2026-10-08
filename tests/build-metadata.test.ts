@@ -3,7 +3,10 @@ import {info, warning} from '@actions/core'
 import {createSign} from 'crypto'
 import {mkdir, writeFile} from 'fs/promises'
 import {join} from 'path'
-import {submitBuildMetadataUpdates} from '../src/buildMetadata'
+import {
+  prepareBuildMetadata,
+  submitBuildMetadataUpdates
+} from '../src/buildMetadata'
 
 const infoMock = vi.hoisted(() => vi.fn())
 const warningMock = vi.hoisted(() => vi.fn())
@@ -23,6 +26,13 @@ vi.mock('adm-zip', () => ({default: admZipMock}))
 vi.mock('@actions/exec', () => ({exec: execMock}))
 
 let originalFetch: typeof global.fetch | undefined
+
+async function prepareAndSubmit(
+  params: Parameters<typeof prepareBuildMetadata>[0] &
+    Parameters<typeof submitBuildMetadataUpdates>[1]
+): ReturnType<typeof submitBuildMetadataUpdates> {
+  return submitBuildMetadataUpdates(await prepareBuildMetadata(params), params)
+}
 
 describe('release notes submission', () => {
   beforeEach(() => {
@@ -76,7 +86,7 @@ describe('release notes submission', () => {
   })
 
   it('logs and exits early when neither release notes nor encryption flag provided', async () => {
-    const outcome = await submitBuildMetadataUpdates({
+    const outcome = await prepareAndSubmit({
       releaseNotes: '   ',
       usesNonExemptEncryptionInput: undefined,
       appPath: 'path/to/app.ipa',
@@ -163,7 +173,7 @@ describe('release notes submission', () => {
       }
     )
 
-    const outcome = await submitBuildMetadataUpdates({
+    const outcome = await prepareAndSubmit({
       releaseNotes: longNotes,
       appPath: 'path/to/app.ipa',
       appType: 'ios',
@@ -244,7 +254,7 @@ describe('release notes submission', () => {
       }
     )
 
-    const outcome = await submitBuildMetadataUpdates({
+    const outcome = await prepareAndSubmit({
       releaseNotes: '   ',
       usesNonExemptEncryptionInput: 'false',
       appPath: 'path/to/app.ipa',
@@ -290,7 +300,7 @@ describe('release notes submission', () => {
     })
 
     await expect(
-      submitBuildMetadataUpdates({
+      prepareAndSubmit({
         releaseNotes: 'What to test',
         appPath: 'path/to/app.ipa',
         appType: 'ios',
@@ -299,7 +309,7 @@ describe('release notes submission', () => {
         apiPrivateKey: 'PRIVATE_KEY'
       })
     ).rejects.toThrow(
-      /The IPA already uploaded and processing is VALID[\s\S]*Test Information is missing[\s\S]*Fill App Store Connect → TestFlight → Test Information/
+      /The build already uploaded, but attaching TestFlight "What to Test" failed[\s\S]*Test Information is missing[\s\S]*Fill App Store Connect → TestFlight → Test Information/
     )
 
     const buildLocalizationGets = fetchMock.mock.calls.filter(
@@ -368,7 +378,7 @@ describe('release notes submission', () => {
       }
     )
 
-    const outcome = await submitBuildMetadataUpdates({
+    const outcome = await prepareAndSubmit({
       releaseNotes: 'What testers should look at',
       appPath: 'path/to/app.ipa',
       appType: 'ios',
@@ -443,7 +453,7 @@ describe('release notes submission', () => {
       }
     })
 
-    const outcome = await submitBuildMetadataUpdates({
+    const outcome = await prepareAndSubmit({
       releaseNotes: '',
       usesNonExemptEncryptionInput: 'false',
       appPath: '/builds/ScoreboardNDI.pkg',
@@ -472,5 +482,54 @@ describe('release notes submission', () => {
     expect(
       buildsUrl?.searchParams.get('filter[preReleaseVersion.platform]')
     ).toBe('MAC_OS')
+  })
+
+  it('rejects an invalid encryption value before reading the app', async () => {
+    await expect(
+      prepareBuildMetadata({
+        releaseNotes: 'Notes',
+        usesNonExemptEncryptionInput: 'maybe',
+        appPath: 'path/to/app.ipa'
+      })
+    ).rejects.toThrow('Invalid uses-non-exempt-encryption value "maybe"')
+
+    expect(admZipMock).not.toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('skips without reading the app when wait-for-processing is false', async () => {
+    const plan = await prepareBuildMetadata({
+      releaseNotes: 'Notes',
+      appPath: 'path/to/app.ipa',
+      waitForProcessing: false
+    })
+
+    expect(plan).toEqual({
+      skip: {
+        status: 'skipped',
+        summary:
+          'TestFlight metadata skipped: wait-for-processing=false, so release notes and encryption compliance were not applied.'
+      }
+    })
+    expect(admZipMock).not.toHaveBeenCalled()
+  })
+
+  it('reads app metadata during prepare, before any App Store Connect call', async () => {
+    const plan = await prepareBuildMetadata({
+      releaseNotes: '  Notes  ',
+      usesNonExemptEncryptionInput: 'true',
+      appPath: 'path/to/app.ipa'
+    })
+
+    expect(plan).toEqual({
+      releaseNotes: 'Notes',
+      usesNonExemptEncryption: true,
+      app: {
+        bundleId: 'com.example.app',
+        buildNumber: '123',
+        shortVersion: '1.2.3'
+      }
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

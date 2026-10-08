@@ -6,7 +6,7 @@ import AdmZip from 'adm-zip'
 import {parse as parsePlist} from 'plist'
 import {parseBuffer} from 'bplist-parser'
 
-type AppMetadata = {
+export type AppMetadata = {
   bundleId: string
   buildNumber: string
   shortVersion: string

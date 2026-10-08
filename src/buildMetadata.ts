@@ -1,12 +1,12 @@
 import {info, warning} from '@actions/core'
 import {generateJwt} from './auth/jwt'
-import {extractAppMetadata} from './utils/appMetadata'
+import {extractAppMetadata, type AppMetadata} from './utils/appMetadata'
 import {buildPlatform, fetchJson, type TokenSource} from './utils/http'
 import {lookupAppId} from './utils/lookup-app-id'
 import {lookupBuildIdWithRetry} from './utils/buildLookup'
 
 const NOTES_ATTACH_PREFIX =
-  'The IPA already uploaded and processing is VALID, but attaching TestFlight "What to Test" failed'
+  'The build already uploaded, but attaching TestFlight "What to Test" failed'
 
 type BetaAppLocalization = {
   id?: string
@@ -22,31 +22,35 @@ export type MetadataOutcome = {
   summary: string
 }
 
-export async function submitBuildMetadataUpdates(params: {
+export type MetadataPlan =
+  | {skip: MetadataOutcome}
+  | {
+      releaseNotes: string
+      usesNonExemptEncryption?: boolean
+      app: AppMetadata
+    }
+
+export async function prepareBuildMetadata(params: {
   releaseNotes: string
   usesNonExemptEncryptionInput?: string
   appPath: string
-  appType: string
-  issuerId: string
-  apiKeyId: string
-  apiPrivateKey: string
   waitForProcessing?: boolean
-}): Promise<MetadataOutcome> {
+}): Promise<MetadataPlan> {
   const trimmed = params.releaseNotes.trim()
-  const wantsReleaseNotes = trimmed !== ''
   const parsedEncryption = parseUsesNonExemptEncryption(
     params.usesNonExemptEncryptionInput
   )
-  const wantsEncryptionUpdate = parsedEncryption !== undefined
 
-  if (!wantsReleaseNotes && !wantsEncryptionUpdate) {
+  if (trimmed === '' && parsedEncryption === undefined) {
     info(
       'No release note or encryption compliance requested. Skipping TestFlight metadata update.'
     )
     return {
-      status: 'skipped',
-      summary:
-        'TestFlight metadata skipped: no release notes or encryption compliance requested.'
+      skip: {
+        status: 'skipped',
+        summary:
+          'TestFlight metadata skipped: no release notes or encryption compliance requested.'
+      }
     }
   }
 
@@ -55,13 +59,39 @@ export async function submitBuildMetadataUpdates(params: {
       'wait-for-processing=false; skipping release notes and encryption updates because build visibility is not guaranteed.'
     )
     return {
-      status: 'skipped',
-      summary:
-        'TestFlight metadata skipped: wait-for-processing=false, so release notes and encryption compliance were not applied.'
+      skip: {
+        status: 'skipped',
+        summary:
+          'TestFlight metadata skipped: wait-for-processing=false, so release notes and encryption compliance were not applied.'
+      }
     }
   }
 
-  const metadata = await extractAppMetadata(params.appPath)
+  return {
+    releaseNotes: trimmed,
+    usesNonExemptEncryption: parsedEncryption,
+    app: await extractAppMetadata(params.appPath)
+  }
+}
+
+export async function submitBuildMetadataUpdates(
+  plan: MetadataPlan,
+  params: {
+    appType: string
+    issuerId: string
+    apiKeyId: string
+    apiPrivateKey: string
+  }
+): Promise<MetadataOutcome> {
+  if ('skip' in plan) {
+    return plan.skip
+  }
+
+  const trimmed = plan.releaseNotes
+  const wantsReleaseNotes = trimmed !== ''
+  const parsedEncryption = plan.usesNonExemptEncryption
+  const wantsEncryptionUpdate = parsedEncryption !== undefined
+  const metadata = plan.app
   const token = () =>
     generateJwt(params.issuerId, params.apiKeyId, params.apiPrivateKey)
   const platform = buildPlatform(params.appType)
