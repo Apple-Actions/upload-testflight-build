@@ -75,13 +75,19 @@ export async function waitForBuildProcessing(
 
   await sleepMs(visibilityDelayMs) // initial wait before first lookup
 
+  const timeoutHints =
+    'Common causes: App Store Connect is still processing the upload, missing TestFlight Test Information (Beta App Description, Feedback Email, primary locale), or unresolved export compliance (set uses-non-exempt-encryption or ITSAppUsesNonExemptEncryption in Info.plist).'
+
   await pollWithBackoff(
     () => lookupBuildState(params),
     state => state === 'VALID' || state === 'PROCESSING',
     visibilityAttempts,
     visibilityDelayMs,
     label =>
-      onRetry?.(`Waiting for build ${params.buildNumber} visibility: ${label}`)
+      onRetry?.(`Waiting for build ${params.buildNumber} visibility: ${label}`),
+    undefined,
+    lastState =>
+      `Timed out waiting for build ${params.buildNumber} to become visible in App Store Connect (last processingState=${lastState ?? 'not found'}). ${timeoutHints}`
   )
 
   await pollWithBackoff(
@@ -90,7 +96,10 @@ export async function waitForBuildProcessing(
     processingAttempts,
     processingDelayMs,
     label =>
-      onRetry?.(`Waiting for build ${params.buildNumber} processing: ${label}`)
+      onRetry?.(`Waiting for build ${params.buildNumber} processing: ${label}`),
+    undefined,
+    lastState =>
+      `Timed out waiting for build ${params.buildNumber} processing to become VALID in App Store Connect (last processingState=${lastState ?? 'not found'}). ${timeoutHints}`
   )
 }
 

@@ -1,5 +1,5 @@
 import {describe, it, expect, vi} from 'vitest'
-import {pollUntil} from '../src/utils/poll'
+import {pollUntil, pollWithBackoff} from '../src/utils/poll'
 
 describe('pollUntil', () => {
   it('resolves when predicate is satisfied', async () => {
@@ -36,5 +36,21 @@ describe('pollUntil', () => {
     ).rejects.toThrow()
 
     expect(onRetry).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('pollWithBackoff', () => {
+  it('uses a timeoutError factory with the last value', async () => {
+    await expect(
+      pollWithBackoff(
+        async () => 'PROCESSING',
+        value => value === 'VALID',
+        2,
+        1,
+        undefined,
+        undefined,
+        last => `gave up at ${last}`
+      )
+    ).rejects.toThrow('gave up at PROCESSING')
   })
 })
