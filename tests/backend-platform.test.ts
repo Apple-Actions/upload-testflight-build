@@ -12,6 +12,9 @@ const deletePrivateKeysMock = vi.hoisted(() => vi.fn())
 const prepareBuildMetadataMock = vi.hoisted(() =>
   vi.fn().mockResolvedValue({skip: {status: 'skipped', summary: ''}})
 )
+const assertTestInformationBeforeUploadMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined)
+)
 const submitBuildMetadataUpdatesMock = vi.hoisted(() =>
   vi.fn().mockResolvedValue({
     status: 'skipped',
@@ -85,6 +88,7 @@ vi.mock('../src/backends/altool', () => ({
 
 vi.mock('../src/buildMetadata', () => ({
   prepareBuildMetadata: prepareBuildMetadataMock,
+  assertTestInformationBeforeUpload: assertTestInformationBeforeUploadMock,
   submitBuildMetadataUpdates: submitBuildMetadataUpdatesMock
 }))
 
@@ -180,7 +184,46 @@ describe('backend platform guard', () => {
     )
     expect(appstoreUploadMock).not.toHaveBeenCalled()
     expect(installPrivateKeyMock).not.toHaveBeenCalled()
+    expect(assertTestInformationBeforeUploadMock).not.toHaveBeenCalled()
     expect(submitBuildMetadataUpdatesMock).not.toHaveBeenCalled()
     expect(deletePrivateKeysMock).toHaveBeenCalled()
+  })
+
+  it('fails before uploading when Test Information is missing', async () => {
+    assertTestInformationBeforeUploadMock.mockRejectedValueOnce(
+      new Error(
+        'Refusing to upload: TestFlight Test Information is not ready: Test Information is missing'
+      )
+    )
+    getInputMock.mockImplementation((name: string) => {
+      if (name === 'backend') return 'appstore-api'
+      return commonInput(name)
+    })
+
+    await import('../src/main')
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(setFailedMock).toHaveBeenCalledWith(
+      expect.stringContaining('Refusing to upload')
+    )
+    expect(appstoreUploadMock).not.toHaveBeenCalled()
+    expect(installPrivateKeyMock).not.toHaveBeenCalled()
+    expect(submitBuildMetadataUpdatesMock).not.toHaveBeenCalled()
+    expect(deletePrivateKeysMock).toHaveBeenCalled()
+  })
+
+  it('skips the pre-upload Test Information check when wait-for-processing is false', async () => {
+    getInputMock.mockImplementation((name: string) => {
+      if (name === 'backend') return 'appstore-api'
+      if (name === 'wait-for-processing') return 'false'
+      return commonInput(name)
+    })
+
+    await import('../src/main')
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(assertTestInformationBeforeUploadMock).not.toHaveBeenCalled()
+    expect(appstoreUploadMock).toHaveBeenCalled()
+    expect(setFailedMock).not.toHaveBeenCalled()
   })
 })
