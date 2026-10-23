@@ -38,6 +38,8 @@ export async function lookupBuildIdWithRetry(
   return result
 }
 
+const TERMINAL_PROCESSING_STATES = new Set(['INVALID', 'FAILED'])
+
 export async function lookupBuildState(
   params: BuildLookupParams
 ): Promise<string | undefined> {
@@ -53,6 +55,18 @@ export async function lookupBuildState(
   )
 
   return response.data?.[0]?.attributes?.processingState
+}
+
+async function lookupBuildStateRejectingTerminal(
+  params: BuildLookupParams
+): Promise<string | undefined> {
+  const state = await lookupBuildState(params)
+  if (state && TERMINAL_PROCESSING_STATES.has(state)) {
+    throw new Error(
+      `Build ${params.buildNumber} reached terminal processingState=${state} in App Store Connect.`
+    )
+  }
+  return state
 }
 
 export async function waitForBuildProcessing(
@@ -79,7 +93,7 @@ export async function waitForBuildProcessing(
     'Common causes: App Store Connect is still processing the upload, missing TestFlight Test Information (Beta App Description, Feedback Email, primary locale), or unresolved export compliance (set uses-non-exempt-encryption or ITSAppUsesNonExemptEncryption in Info.plist).'
 
   await pollWithBackoff(
-    () => lookupBuildState(params),
+    () => lookupBuildStateRejectingTerminal(params),
     state => state === 'VALID' || state === 'PROCESSING',
     visibilityAttempts,
     visibilityDelayMs,
@@ -91,7 +105,7 @@ export async function waitForBuildProcessing(
   )
 
   await pollWithBackoff(
-    () => lookupBuildState(params),
+    () => lookupBuildStateRejectingTerminal(params),
     state => state === 'VALID',
     processingAttempts,
     processingDelayMs,
