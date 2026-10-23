@@ -4,6 +4,7 @@ import {createSign} from 'crypto'
 import {mkdir, writeFile} from 'fs/promises'
 import {join} from 'path'
 import {
+  assertTestInformationBeforeUpload,
   prepareBuildMetadata,
   submitBuildMetadataUpdates
 } from '../src/buildMetadata'
@@ -531,5 +532,75 @@ describe('release notes submission', () => {
       }
     })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('assertTestInformationBeforeUpload fails without uploading when Test Information is missing', async () => {
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const url = input instanceof URL ? input : new URL(String(input))
+      const path = url.pathname
+      const data =
+        path === '/apps' || path === '/v1/apps'
+          ? {
+              data: [{id: 'app-id', attributes: {bundleId: 'com.example.app'}}]
+            }
+          : {data: []}
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {get: () => 'application/json'},
+        json: async () => data,
+        text: async () => JSON.stringify(data)
+      }
+    })
+
+    await expect(
+      assertTestInformationBeforeUpload({
+        appPath: 'path/to/app.ipa',
+        issuerId: 'issuer-id',
+        apiKeyId: 'api-key-id',
+        apiPrivateKey: 'PRIVATE_KEY'
+      })
+    ).rejects.toThrow(
+      /Refusing to upload: TestFlight Test Information is not ready[\s\S]*Test Information is missing/
+    )
+
+    expect(
+      fetchMock.mock.calls.some(call => String(call[0]).includes('/builds'))
+    ).toBe(false)
+  })
+
+  it('assertTestInformationBeforeUpload succeeds when a locale exists', async () => {
+    fetchMock.mockImplementation(async (input: unknown) => {
+      const url = input instanceof URL ? input : new URL(String(input))
+      const path = url.pathname
+      const data =
+        path === '/apps' || path === '/v1/apps'
+          ? {
+              data: [{id: 'app-id', attributes: {bundleId: 'com.example.app'}}]
+            }
+          : path.endsWith('/betaAppLocalizations')
+            ? {data: [{id: 'loc-id', attributes: {locale: 'en-US'}}]}
+            : {data: []}
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {get: () => 'application/json'},
+        json: async () => data,
+        text: async () => JSON.stringify(data)
+      }
+    })
+
+    await assertTestInformationBeforeUpload({
+      appPath: 'path/to/app.ipa',
+      issuerId: 'issuer-id',
+      apiKeyId: 'api-key-id',
+      apiPrivateKey: 'PRIVATE_KEY'
+    })
+
+    expect(info).toHaveBeenCalledWith(
+      'TestFlight Test Information is present for app app-id (bundle id com.example.app).'
+    )
   })
 })

@@ -1,6 +1,10 @@
 import {getInput, setOutput, setFailed, info} from '@actions/core'
 import {platform} from 'os'
-import {prepareBuildMetadata, submitBuildMetadataUpdates} from './buildMetadata'
+import {
+  assertTestInformationBeforeUpload,
+  prepareBuildMetadata,
+  submitBuildMetadataUpdates
+} from './buildMetadata'
 import {installPrivateKey, deleteAllPrivateKeys} from './utils/keys'
 import {UploadFactory} from './backends/types'
 import {transporter} from './backends/transporter'
@@ -88,6 +92,15 @@ async function run(): Promise<void> {
       waitForProcessing,
       appPath
     })
+
+    if (waitForProcessing) {
+      await assertTestInformationBeforeUpload({
+        appPath,
+        issuerId,
+        apiKeyId,
+        apiPrivateKey
+      })
+    }
 
     const execOptions: ExecOptions = {}
 

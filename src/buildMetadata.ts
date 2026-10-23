@@ -8,6 +8,9 @@ import {lookupBuildIdWithRetry} from './utils/buildLookup'
 const NOTES_ATTACH_PREFIX =
   'The build already uploaded, but attaching TestFlight "What to Test" failed'
 
+const PRE_UPLOAD_TEST_INFO_PREFIX =
+  'Refusing to upload: TestFlight Test Information is not ready'
+
 type BetaAppLocalization = {
   id?: string
   attributes?: {locale?: string}
@@ -74,6 +77,28 @@ export async function prepareBuildMetadata(params: {
   }
 }
 
+/** Fail before upload when wait-for-processing is enabled and Test Information is missing. */
+export async function assertTestInformationBeforeUpload(params: {
+  appPath: string
+  issuerId: string
+  apiKeyId: string
+  apiPrivateKey: string
+}): Promise<void> {
+  const metadata = await extractAppMetadata(params.appPath)
+  const token = () =>
+    generateJwt(params.issuerId, params.apiKeyId, params.apiPrivateKey)
+  const appId = await lookupAppId(metadata.bundleId, token)
+  await requireTestInformationLocale(
+    appId,
+    metadata.bundleId,
+    token,
+    PRE_UPLOAD_TEST_INFO_PREFIX
+  )
+  info(
+    `TestFlight Test Information is present for app ${appId} (bundle id ${metadata.bundleId}).`
+  )
+}
+
 export async function submitBuildMetadataUpdates(
   plan: MetadataPlan,
   params: {
@@ -119,7 +144,8 @@ export async function submitBuildMetadataUpdates(
     const locale = await requireTestInformationLocale(
       appId,
       metadata.bundleId,
-      token
+      token,
+      NOTES_ATTACH_PREFIX
     )
     notesResult = await attachReleaseNotes(buildId, locale, trimmed, token)
   }
@@ -155,26 +181,27 @@ export async function submitBuildMetadataUpdates(
 async function requireTestInformationLocale(
   appId: string,
   bundleId: string,
-  token: TokenSource
+  token: TokenSource,
+  errorPrefix: string
 ): Promise<string> {
   const response = await fetchJson<{data?: BetaAppLocalization[]}>(
     // Docs: https://developer.apple.com/documentation/appstoreconnectapi/list-beta-app-localizations-for-an-app
     `/apps/${appId}/betaAppLocalizations`,
     token,
-    `${NOTES_ATTACH_PREFIX}: Failed to query Test Information.`
+    `${errorPrefix}: Failed to query Test Information.`
   )
 
   const localizations = response.data ?? []
   if (localizations.length === 0) {
     throw new Error(
-      `${NOTES_ATTACH_PREFIX}: Test Information is missing for app ${appId} (bundle id ${bundleId}). Fill App Store Connect → TestFlight → Test Information for the app (Beta App Description, Feedback Email, primary locale), or run scripts/populate-test-information.sh --apply with --issuer-id, --api-key-id, and --api-private-key-path.`
+      `${errorPrefix}: Test Information is missing for app ${appId} (bundle id ${bundleId}). Fill App Store Connect → TestFlight → Test Information for the app (Beta App Description, Feedback Email, primary locale), or run scripts/populate-test-information.sh --apply with --issuer-id, --api-key-id, and --api-private-key-path.`
     )
   }
 
   const locale = localizations[0]?.attributes?.locale?.trim()
   if (!locale) {
     throw new Error(
-      `${NOTES_ATTACH_PREFIX}: Test Information for app ${appId} (bundle id ${bundleId}) has no locale.`
+      `${errorPrefix}: Test Information for app ${appId} (bundle id ${bundleId}) has no locale.`
     )
   }
 
