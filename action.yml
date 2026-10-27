@@ -32,7 +32,13 @@ inputs:
     description: 'Boolean string. Set to "true" if your build uses non-exempt encryption; "false" otherwise.'
     required: false
   wait-for-processing:
-    description: 'Boolean string. Set to "false" to skip waiting for App Store processing (metadata updates will be skipped when waiting is disabled).'
+    description: 'Boolean string. Set to "false" to skip waiting for App Store processing (metadata updates are skipped; groups/groups-file cannot be used when waiting is disabled).'
+    required: false
+  groups:
+    description: 'Optional comma- or newline-separated exact TestFlight beta group names to add the uploaded build to. Mutually exclusive with groups-file. Requires wait-for-processing.'
+    required: false
+  groups-file:
+    description: 'Optional path to a text file of exact TestFlight beta group names (one per line; # comments allowed). Mutually exclusive with groups. Requires wait-for-processing.'
     required: false
   upload-attempts:
     description: 'altool backend only. How many fresh altool runs to try when an upload gets stuck (endless part retries or upload-timeout-minutes exceeded).'
