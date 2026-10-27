@@ -38,11 +38,11 @@
     "plist": "~5.0.0"
   },
   "devDependencies": {
-    "@types/node": "~24.12.0",
+    "@types/node": "~24.19.2",
     "esbuild": "~0.28.0",
-    "eslint": "~9.39.0",
+    "eslint": "~10.13.0",
     "eslint-plugin-github": "~6.1.2",
-    "knip": "~6.39.0",
+    "knip": "~6.41.0",
     "prettier": "~3.9.9",
     "typescript": "~7.0.2",
     "vite": "~8.3.3",
