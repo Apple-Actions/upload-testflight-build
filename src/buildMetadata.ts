@@ -1,9 +1,12 @@
-import {info, warning} from '@actions/core'
+import {info} from '@actions/core'
 import {generateJwt} from './auth/jwt'
 import {extractAppMetadata, type AppMetadata} from './utils/appMetadata'
-import {buildPlatform, fetchJson, type TokenSource} from './utils/http'
+import {fetchJson, type TokenSource} from './utils/http'
 import {lookupAppId} from './utils/lookup-app-id'
-import {lookupBuildIdWithRetry} from './utils/buildLookup'
+import {
+  resolveUploadedBuild,
+  type ResolvedUploadedBuild
+} from './utils/resolve-uploaded-build'
 
 const NOTES_ATTACH_PREFIX =
   'The build already uploaded, but attaching TestFlight "What to Test" failed'
@@ -106,7 +109,9 @@ export async function submitBuildMetadataUpdates(
     issuerId: string
     apiKeyId: string
     apiPrivateKey: string
-  }
+    appPath?: string
+  },
+  resolved?: ResolvedUploadedBuild
 ): Promise<MetadataOutcome> {
   if ('skip' in plan) {
     return plan.skip
@@ -116,29 +121,16 @@ export async function submitBuildMetadataUpdates(
   const wantsReleaseNotes = trimmed !== ''
   const parsedEncryption = plan.usesNonExemptEncryption
   const wantsEncryptionUpdate = parsedEncryption !== undefined
-  const metadata = plan.app
-  const token = () =>
-    generateJwt(params.issuerId, params.apiKeyId, params.apiPrivateKey)
-  const platform = buildPlatform(params.appType)
-
-  const appId = await lookupAppId(metadata.bundleId, token)
-  const buildId = await lookupBuildIdWithRetry(
-    {
-      appId,
-      buildNumber: metadata.buildNumber,
-      platform,
-      token
-    },
-    20,
-    30000,
-    attempt => {
-      warning(
-        `Build ${metadata.buildNumber} not yet visible in App Store Connect (attempt ${
-          attempt + 1
-        }/20). Retrying in ${Math.round(30000 / 1000)}s`
-      )
-    }
-  )
+  const uploaded =
+    resolved ??
+    (await resolveUploadedBuild({
+      appPath: requireAppPath(params.appPath),
+      appType: params.appType,
+      issuerId: params.issuerId,
+      apiKeyId: params.apiKeyId,
+      apiPrivateKey: params.apiPrivateKey
+    }))
+  const {appId, buildId, app: metadata, token} = uploaded
   let notesResult: 'created' | 'updated' | undefined
   if (wantsReleaseNotes) {
     const locale = await requireTestInformationLocale(
@@ -357,4 +349,14 @@ function parseUsesNonExemptEncryption(value?: string): boolean | undefined {
   throw new Error(
     `Invalid uses-non-exempt-encryption value "${value}". Use "true" or "false".`
   )
+}
+
+function requireAppPath(appPath: string | undefined): string {
+  const trimmed = appPath?.trim() ?? ''
+  if (trimmed === '') {
+    throw new Error(
+      'appPath is required to resolve the uploaded build for TestFlight metadata updates.'
+    )
+  }
+  return trimmed
 }

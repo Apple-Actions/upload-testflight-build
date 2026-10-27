@@ -5,12 +5,14 @@ import {
   prepareBuildMetadata,
   submitBuildMetadataUpdates
 } from './buildMetadata'
+import {assignBuildToGroups, resolveGroupNames} from './betaGroups'
 import {installPrivateKey, deleteAllPrivateKeys} from './utils/keys'
 import {UploadFactory} from './backends/types'
 import {transporter} from './backends/transporter'
 import {altool} from './backends/altool'
 import {appstoreApi} from './backends/appstore-api'
 import {normalizeBackend} from './utils/normalize-backend'
+import {resolveUploadedBuild} from './utils/resolve-uploaded-build'
 import type {ExecOptions} from '@actions/exec'
 
 function parsePositiveNumber(
@@ -45,6 +47,8 @@ async function run(): Promise<void> {
       waitForProcessingInput.trim() === ''
         ? true
         : waitForProcessingInput.trim().toLowerCase() !== 'false'
+    const groupsInput: string = getInput('groups')
+    const groupsFileInput: string = getInput('groups-file')
     const backendInput: string = getInput('backend') || 'appstore-api'
     const transporterExecutablePath: string | undefined =
       getInput('transporter-executable-path') || undefined
@@ -57,6 +61,16 @@ async function run(): Promise<void> {
       'upload-timeout-minutes',
       getInput('upload-timeout-minutes')
     )
+
+    const groupNames = await resolveGroupNames({
+      groups: groupsInput,
+      groupsFile: groupsFileInput
+    })
+    if (groupNames.length > 0 && !waitForProcessing) {
+      throw new Error(
+        'TestFlight group assignment requires wait-for-processing (default true). Remove groups/groups-file, or enable waiting.'
+      )
+    }
 
     const backend = normalizeBackend(backendInput)
     info(
@@ -124,13 +138,40 @@ async function run(): Promise<void> {
     info(`Upload finished via backend: ${result.backend}`)
     setOutput('upload-backend', result.backend)
 
-    const metadataOutcome = await submitBuildMetadataUpdates(metadataPlan, {
-      appType,
-      issuerId,
-      apiKeyId,
-      apiPrivateKey
-    })
+    const needsResolvedBuild =
+      !('skip' in metadataPlan) || groupNames.length > 0
+    const resolved = needsResolvedBuild
+      ? await resolveUploadedBuild({
+          appPath,
+          appType,
+          issuerId,
+          apiKeyId,
+          apiPrivateKey
+        })
+      : undefined
+
+    const metadataOutcome = await submitBuildMetadataUpdates(
+      metadataPlan,
+      {
+        appPath,
+        appType,
+        issuerId,
+        apiKeyId,
+        apiPrivateKey
+      },
+      resolved
+    )
     info(metadataOutcome.summary)
+
+    if (groupNames.length > 0) {
+      if (!resolved) {
+        throw new Error(
+          'Internal error: uploaded build was not resolved before group assignment.'
+        )
+      }
+      const groupsOutcome = await assignBuildToGroups(groupNames, resolved)
+      info(groupsOutcome.summary)
+    }
   } catch (error: unknown | Error) {
     setFailed((error as Error).message || 'An unknown error occurred.')
   } finally {

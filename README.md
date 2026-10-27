@@ -33,12 +33,38 @@ Issuer ID: [App Store Connect → Users and Access → Integrations → App Stor
     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
     release-notes: ${{ steps.generate_notes.outputs.whats_new }} # optional
     uses-non-exempt-encryption: 'false' # optional: "true" or "false" maps directly to App Store Connect usesNonExemptEncryption
-    wait-for-processing: 'true' # optional: set to "false" to skip waiting (metadata updates will be skipped)
+    wait-for-processing: 'true' # optional: set to "false" to skip waiting (metadata updates and group assignment will be skipped)
+    groups-file: .apple-actions/testflight-groups.txt # optional: add the build to these TestFlight groups
     backend: AppStoreAPI # optional: AppStoreAPI | transporter | altool (default: AppStoreAPI; case insensitive)
 ```
 
 > [!NOTE]
 > When `wait-for-processing` is enabled (the default), the action checks TestFlight **Test Information** (Beta App Description, Feedback Email, and a primary locale) **before** uploading. Missing Test Information fails the step immediately so a build is not left half-processed in App Store Connect. Attaching `release-notes` still requires the same Test Information after upload. While waiting, `INVALID` or `FAILED` processing states fail immediately instead of polling until timeout; if waiting times out without a terminal state, the error names common blockers (Test Information, export compliance). Problems that can be caught locally, such as an app file whose `Info.plist` can't be read or an invalid `uses-non-exempt-encryption` value, also fail before anything is uploaded.
+
+### Add the build to TestFlight groups
+
+Opt-in: provide **either** a checked-in file **or** an inline list (not both). Exact App Store Connect group names; case-sensitive. Requires `wait-for-processing` (the default).
+
+**Recommended (revision history):** commit a file and pass `groups-file`:
+
+```text
+# .apple-actions/testflight-groups.txt
+# Exact App Store Connect TestFlight group names
+QA
+Friends & Family
+```
+
+```yaml
+    groups-file: .apple-actions/testflight-groups.txt
+```
+
+**Alternatively:** pass `groups` (comma- or newline-separated), including from a GitHub Actions variable:
+
+```yaml
+    groups: ${{ vars.TESTFLIGHT_GROUPS }}
+```
+
+After upload, the action links the build to each named group. For external groups, if App Store Connect reports `externalBuildState=READY_FOR_BETA_SUBMISSION`, it also creates a beta app review submission so testers can receive the build once review completes. Groups with “Access to All Builds” are left unchanged (they already see the build).
 
 Populate Test Information from your app repo (bundle id, description, and feedback email) with the same credential flags as [`download-provisioning-profiles`](https://github.com/Apple-Actions/download-provisioning-profiles) (`curl`, `jq`, `openssl`, and `python3`). The script prints what it would write; pass `--apply` to send it to App Store Connect:
 
