@@ -8,7 +8,7 @@
     "node": "24"
   },
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --platform=node --target=node24 --format=esm --minify --alias:undici=./scripts/undici-stub.mjs --outfile=dist/index.js --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/index.js --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
     "knip": "knip",
@@ -39,20 +39,17 @@
   },
   "devDependencies": {
     "@types/node": "~24.19.2",
-    "esbuild": "~0.28.0",
+    "esbuild": "~0.28.2",
     "eslint": "~10.13.0",
     "eslint-plugin-github": "~6.1.2",
-    "knip": "~6.41.0",
-    "prettier": "~3.9.9",
+    "knip": "~6.42.1",
+    "prettier": "~3.9.10",
     "typescript": "~7.0.2",
     "vite": "~8.3.3",
-    "vitest": "~5.0.2"
+    "vitest": "~5.0.5"
   },
   "packageManager": "yarn@4.18.0",
   "knip": {
-    "ignore": [
-      "scripts/undici-stub.mjs"
-    ],
     "ignoreBinaries": [
       "pkgbuild"
     ]

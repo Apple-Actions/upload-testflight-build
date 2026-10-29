@@ -1,6 +1,6 @@
-# Webstorm Config
+# WebStorm Config
 .idea
- 
+
 # Dependency directory
 node_modules
 .yarn
@@ -97,7 +97,3 @@ typings/
 # OS metadata
 .DS_Store
 Thumbs.db
-
-# Ignore built ts files
-__tests__/runner/*
-lib/**/*
