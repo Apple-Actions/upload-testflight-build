@@ -1,6 +1,5 @@
 import {afterAll, beforeEach, describe, expect, it, vi} from 'vitest'
-import type {ExecOptions} from '@actions/exec/lib/interfaces'
-import {exec} from '@actions/exec'
+import {exec, type ExecOptions} from '@actions/exec'
 import {mkdirP, rmRF} from '@actions/io'
 import {writeFileSync} from 'fs'
 import {uploadApp} from '../src/backends/transporter'
